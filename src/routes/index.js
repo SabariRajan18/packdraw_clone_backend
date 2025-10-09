@@ -20,10 +20,10 @@ router.use("/v1/users/spin", userSpinRouters);
 router.use("/v1/users/auth", userAuthRouters);
 
 // ADMIN ROUTERS
-router.use("/packdraw/v2/admin", adminBackdrawRouters);
-router.use("/battle/v2/admin", adminBattleRouters);
-router.use("/spin/v2/admin", adminSpinRouters);
-router.use("/auth/v2/admin", adminAuthRouters);
+router.use("/v2/admin/packdraw", adminBackdrawRouters);
+router.use("/v2/admin/battle", adminBattleRouters);
+router.use("/v2/admin/spin", adminSpinRouters);
+router.use("/v2/admin/auth", adminAuthRouters);
 
 // COMMON ROUTER
 router.use("/common-api", commonApi);

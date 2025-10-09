@@ -4,7 +4,7 @@ import { uploadImage } from "../../config/cloudinary.js";
 class AdminPackDrawService {
   addPacks = async (request) => {
     try {
-      const { packAmount, creator } = request.body;
+      const { packAmount, creator, name } = request.body;
       const file = request.file;
       if (!file) {
         return {
@@ -26,6 +26,7 @@ class AdminPackDrawService {
       const filename = `pack_${Date.now()}_${file.originalname}`;
       const imageUrl = await uploadImage(file.buffer, filename);
       const insertData = {
+        name,
         packAmount,
         wallpaper: imageUrl,
         creator,
