@@ -1,7 +1,7 @@
 import PackDrawModel from "../../models/Packdraw.js";
 import PacksItemsModel from "../../models/PacksItems.js";
 import { uploadImage } from "../../config/cloudinary.js";
-class AdminPackDrawService {
+export default new class AdminPackDrawService {
   addPacks = async (request) => {
     try {
       const { packAmount, creator, name } = request.body;
@@ -269,4 +269,3 @@ class AdminPackDrawService {
     }
   };
 }
-export default new AdminPackDrawService();
