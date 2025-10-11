@@ -2,6 +2,7 @@ import speakeasy from "speakeasy";
 import qrcode from "qrcode";
 
 import UsersModel from "../../models/Users.js";
+import VerifyUsersModel from "../../models/VerifyUser.js";
 import {
   _EncPassword,
   _DecPassword,
@@ -13,36 +14,83 @@ import sendMailer from "../../helpers/mail.helper.js";
 class UserAuthService {
   register = async (req_Body) => {
     try {
-      const { email, password } = req_Body;
-      if (!email) {
+      const { email, password, otp } = req_Body;
+
+      if (!email || !password) {
         return {
           code: 400,
           status: false,
-          message: "Email is required",
+          message: "Email and password are required",
           data: null,
         };
       }
-
       const existUser = await UsersModel.findOne({ email });
       if (existUser) {
         return {
           code: 403,
           status: false,
-          message: "E-Mail already exist!",
+          message: "E-Mail already exists!",
           data: null,
         };
       }
-      const insertData = {
-        email,
-        password: _EncPassword(password),
-      };
-      const user = await UsersModel.create(insertData);
-      return {
-        code: 200,
-        status: true,
-        message: "Regiter successfully!",
-        data: user,
-      };
+      const isVerifyUser = await VerifyUsersModel.findOne({ email });
+      if (!isVerifyUser) {
+        const otp = genOtp();
+        await VerifyUsersModel.create({
+          email,
+          otp,
+          type: "register",
+          otpExpireAt: Date.now() + 5 * 60 * 1000,
+        });
+
+        await sendMailer({
+          to: email,
+          subject: "Your Register Verification",
+          text: `Your OTP code is ${otp}. It will expire in 5 minutes.`,
+        });
+
+        return {
+          code: 200,
+          status: true,
+          message:
+            "OTP sent successfully. Please verify to complete registration.",
+          data: { type: 1 },
+        };
+      } else {
+        const user = await VerifyUsersModel.findOne({ email });
+        if (!user) {
+          return {
+            code: 404,
+            status: false,
+            message: "User not found",
+            data: null,
+          };
+        }
+
+        if (user.otp !== Number(otp)) {
+          return {
+            code: 400,
+            status: false,
+            message: "Invalid OTP",
+            data: null,
+          };
+        }
+
+        if (Date.now() > user.otpExpireAt) {
+          return {
+            code: 400,
+            status: false,
+            message: "OTP expired",
+            data: null,
+          };
+        }
+        return {
+          code: 200,
+          status: true,
+          message: "Email verified successfully! Registration complete.",
+          data: { type: 2 },
+        };
+      }
     } catch (error) {
       console.log({ "Register Error": error });
       return {
