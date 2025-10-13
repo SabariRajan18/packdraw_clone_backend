@@ -1,6 +1,6 @@
 import axios from "axios";
 import GameChip from "../../models/GameChip.js";
-import PaymentConfigs from "../../models/PaymentConfigs.js";
+import PaymentConfigs from "../../models/paymentConfigs.js";
 import WithdrawalHistory from "../../models/WithdrawalHistory.js";
 import {
   getMinamount,
