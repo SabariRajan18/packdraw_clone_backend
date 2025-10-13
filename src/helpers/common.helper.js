@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import JWT from "jsonwebtoken";
 dotenv.config();
 
-const { JWT_SECRET, ENC_DEC_SECRET } = process.env;
+const { JWT_SECRET, ENC_DEC_SECRET, SITE_NAME } = process.env;
 export const _EncPassword = (password) => {
   const encPass = CryptoJS.AES.encrypt(password, ENC_DEC_SECRET).toString();
   return encPass;
@@ -27,7 +27,13 @@ export const genAuthToken = (id) => {
   return authToken;
 };
 
-export const generate2FA = () => {};
+export const generate2FASecret = async (email) => {
+  const authConfigs = speakeasy.generateSecret({
+    name: `${SITE_NAME} (${email})`,
+    length: 20,
+  });
+  return authConfigs;
+};
 
 export const verify2FA = (secret, userToken) => {
   const verified = speakeasy.totp.verify({
