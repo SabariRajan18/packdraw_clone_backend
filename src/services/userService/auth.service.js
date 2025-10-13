@@ -1,6 +1,4 @@
-import speakeasy from "speakeasy";
-import qrcode from "qrcode";
-
+import QRCode from "qrcode";
 import UsersModel from "../../models/Users.js";
 import VerifyUsersModel from "../../models/VerifyUser.js";
 import {
@@ -9,6 +7,7 @@ import {
   genOtp,
   verify2FA,
   genAuthToken,
+  generate2FASecret,
 } from "../../helpers/common.helper.js";
 import sendMailer from "../../helpers/mail.helper.js";
 class UserAuthService {
@@ -483,7 +482,21 @@ class UserAuthService {
   };
   getUser = async (userId) => {
     try {
-      const userData = await UsersModel.findOne({ _id: userId });
+      const user = await UsersModel.findOne({ _id: userId }).lean();
+      const authConfig = await generate2FASecret(user.email);
+
+      let userData = user;
+      if (user.authSecret === "") {
+        const qrCodeDataURL = await QRCode.toDataURL(authConfig.otpauth_url);
+        userData.authConfig = {
+          base32: authConfig.base32,
+          otpauth_url: authConfig.otpauth_url,
+          qrCodeDataURL: qrCodeDataURL,
+        };
+      }
+      if (user.authSecret !== "") {
+        delete user.authSecret;
+      }
       return {
         code: 200,
         status: true,
@@ -491,6 +504,7 @@ class UserAuthService {
         data: userData,
       };
     } catch (error) {
+      console.log({ error });
       return {
         code: 500,
         status: false,
