@@ -160,7 +160,7 @@ class UserAuthService {
             code: 200,
             status: true,
             message: "Enter your 2FA code to continue.",
-            data: { email },
+            data: { type: 1 },
           };
         }
       }
