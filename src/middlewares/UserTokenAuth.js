@@ -18,7 +18,7 @@ export const userTokenAuth = (req, res, next) => {
     req.userId = decoded.userId;
     next();
   } catch (error) {
-    console.error({ error });
+    // console.error({ error });
     res.status(403).json({ message: "Invalid or expired token" });
     return;
   }
