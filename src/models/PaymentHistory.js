@@ -48,6 +48,7 @@ const NowPaymentsOrdersHistorySchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    collection: "now_payments_orders_history",
   }
 );
 

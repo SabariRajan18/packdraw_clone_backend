@@ -66,6 +66,7 @@ const WithdrawalHistorySchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    collection: "WithdrawalHistory",
   }
 );
 
