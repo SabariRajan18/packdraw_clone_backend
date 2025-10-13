@@ -1,56 +1,61 @@
 import mongoose from "mongoose";
-  
-const NowPaymentsOrdersSchema = new mongoose.Schema({
+
+const NowPaymentsOrdersSchema = new mongoose.Schema(
+  {
     userid: {
-        type: String
+      type: String,
     },
     useremail: {
-        type: String
+      type: String,
     },
     payment_done_to_walletaddress: {
-        type: String
+      type: String,
     },
     txnhash: {
-        type: String
+      type: String,
     },
     type: {
-        type: String
+      type: String,
     },
     fee: {
-        type: String
+      type: String,
     },
     coin: {
-        type: String
+      type: String,
     },
-    currency:{
-        type: String 
+    currency: {
+      type: String,
     },
     amount: {
-        type: Number
+      type: Number,
     },
     deposite_date: {
-        type: Date
+      type: Date,
     },
     txnstatus: {
-        type: String
+      type: String,
     },
     token_balance_before: {
-        type: Number
+      type: Number,
     },
     token_balance_after: {
-        type: Number
+      type: Number,
     },
     mazi_chips_balance_before: {
-        type: Number
+      type: Number,
     },
     mazi_chips_balance_after: {
-        type: Number
+      type: Number,
     },
-},
-{
-    timestamps: true 
-}
-)
+  },
+  {
+    timestamps: true,
+    collection: "now_payments_orders",
+  }
+);
 
-const NowPaymentsOrders = new mongoose.model('now_payments_orders', NowPaymentsOrdersSchema);
+const NowPaymentsOrders = new mongoose.model(
+  "now_payments_orders",
+  NowPaymentsOrdersSchema
+);
 export default NowPaymentsOrders;

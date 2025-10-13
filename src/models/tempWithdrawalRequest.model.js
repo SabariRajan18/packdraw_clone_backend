@@ -1,57 +1,62 @@
 import mongoose from "mongoose";
 
-const TempWithdrawalHistorySchema = new mongoose.Schema({
+const TempWithdrawalHistorySchema = new mongoose.Schema(
+  {
     userid: {
-        type: String
+      type: String,
     },
     type_of_withdraw: {
-        type: String
+      type: String,
     },
     withdrawal_chain: {
-        type: String
+      type: String,
     },
-	is_auto_withdrawal: {
-        type: String, 
-        default: false
+    is_auto_withdrawal: {
+      type: String,
+      default: false,
     },
     withdraw_amount: {
-        type: Number
+      type: Number,
     },
     estimated_gas_fee: {
-        type: Number
+      type: Number,
     },
     approx_withdraw_amount: {
-        type: Number
+      type: Number,
     },
     requestid: {
-        type: String
+      type: String,
     },
     confirmation_otp: {
-        type: String
+      type: String,
     },
     withdrawl_address: {
-        type: String
+      type: String,
     },
     withdraw_status: {
-        type: String,
-        default: 'pending'          // pending or completed
+      type: String,
+      default: "pending", // pending or completed
     },
     is_request_processed: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
-    request_count:{
-        type: Number,
-        default: 0
+    request_count: {
+      type: Number,
+      default: 0,
     },
     data_by_user: {
-        type: Object
-    }
-},
-    {
-        timestamps: true
-    }
+      type: Object,
+    },
+  },
+  {
+    timestamps: true,
+    collection: "TempWithdrawalHistory",
+  }
 );
 
-const TempWithdrawalHistory = new mongoose.model('TempWithdrawalHistory', TempWithdrawalHistorySchema);
+const TempWithdrawalHistory = new mongoose.model(
+  "TempWithdrawalHistory",
+  TempWithdrawalHistorySchema
+);
 export default TempWithdrawalHistory;

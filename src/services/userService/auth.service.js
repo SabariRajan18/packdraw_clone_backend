@@ -104,7 +104,6 @@ class UserAuthService {
   login = async (req_Body) => {
     try {
       const { email, password, authCode } = req_Body;
-      console.log({ req_Body });
       if (!email || !password) {
         return {
           code: 400,
@@ -323,6 +322,56 @@ class UserAuthService {
       );
     } catch (error) {
       console.error("changePassword error:", error);
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+  updateUserData = async (userId, req_Body) => {
+    try {
+      console.log({ req_Body });
+      const existUser = await UsersModel.findOne({ _id: userId });
+      if (!existUser) {
+        return {
+          code: 400,
+          status: false,
+          message: "User Not Found!",
+          data: null,
+        };
+      }
+      const user = await UsersModel.updateOne(
+        { _id: userId },
+        { $set: req_Body }
+      );
+      return {
+        code: 200,
+        status: true,
+        message: "User Data has been updated!",
+        data: user,
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+  getUser = async (userId) => {
+    try {
+      console.log({ userId });
+      const userData = await UsersModel.findOne({ _id: userId });
+      return {
+        code: 200,
+        status: true,
+        message: "User Data Retrived Successfully!",
+        data: userData,
+      };
+    } catch (error) {
       return {
         code: 500,
         status: false,

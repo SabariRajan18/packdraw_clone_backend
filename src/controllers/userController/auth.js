@@ -28,9 +28,27 @@ class UserAuthController {
       await errorResponse(req, res, error);
     }
   };
-   changePassword = async (req, res) => {
+  changePassword = async (req, res) => {
     try {
       const response = await UserAuthService.changePassword(req, req.body);
+      await successResponse(req, res, response);
+    } catch (error) {
+      await errorResponse(req, res, error);
+    }
+  };
+  updateUserData = async (req, res) => {
+    try {
+      const { userId } = req;
+      const response = await UserAuthService.updateUserData(userId, req.body);
+      await successResponse(req, res, response);
+    } catch (error) {
+      await errorResponse(req, res, error);
+    }
+  };
+  getUser = async (req, res) => {
+    try {
+      const { userId } = req;
+      const response = await UserAuthService.getUser(userId);
       await successResponse(req, res, response);
     } catch (error) {
       await errorResponse(req, res, error);

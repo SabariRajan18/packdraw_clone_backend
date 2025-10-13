@@ -10,7 +10,7 @@ const GameChipSchema = new mongoose.Schema(
       ref: "userdatas",
     },
     total_chip_amount: {
-      type: Number,
+      type: Number, // total balance
       default: 0,
     },
     crypto_balances: {
@@ -30,6 +30,7 @@ const GameChipSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    collection: "GameChip",
   }
 );
 

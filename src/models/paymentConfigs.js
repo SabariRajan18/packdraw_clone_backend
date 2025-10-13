@@ -11,6 +11,7 @@ const PaymentConfigsSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    collection:"PaymentConfigs"
   }
 );
 
