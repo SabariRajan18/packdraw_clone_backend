@@ -296,15 +296,40 @@ class UserAuthService {
   changePassword = async (req) => {
     try {
       const { userId } = req;
-      const { email, oldPassword, newPassword } = req.body;
-      const user = await UsersModel.findOne({ email });
-      if (!user)
+      const { oldPassword, newPassword, confirmPassword } = req.body;
+      const user = await UsersModel.findOne({ _id: userId });
+      if (!user) {
         return {
           code: 403,
           status: false,
           message: "User not found",
           data: null,
         };
+      }
+      if (!oldPassword || oldPassword === "") {
+        return {
+          code: 403,
+          status: false,
+          message: "Old password is incorrect",
+          data: null,
+        };
+      }
+      if (!newPassword || newPassword === "") {
+        return {
+          code: 403,
+          status: false,
+          message: "New Password is Required",
+          data: null,
+        };
+      }
+      if (!confirmPassword || confirmPassword === "") {
+        return {
+          code: 403,
+          status: false,
+          message: "Confirm Password is Required",
+          data: null,
+        };
+      }
 
       const decryptedOldPassword = _DecPassword(user.password);
       if (decryptedOldPassword !== oldPassword) {
@@ -315,11 +340,25 @@ class UserAuthService {
           data: null,
         };
       }
+      if (newPassword !== confirmPassword) {
+        return {
+          code: 403,
+          status: false,
+          message: "New password does not match the confirm password.",
+          data: null,
+        };
+      }
       const encryptedNewPassword = _EncPassword(newPassword);
       await UsersModel.updateOne(
         { _id: userId },
         { $set: { password: encryptedNewPassword } }
       );
+      return {
+        code: 200,
+        status: true,
+        message: "Password Changed Successfully!",
+        data: null,
+      };
     } catch (error) {
       console.error("changePassword error:", error);
       return {
@@ -363,7 +402,6 @@ class UserAuthService {
   };
   getUser = async (userId) => {
     try {
-      console.log({ userId });
       const userData = await UsersModel.findOne({ _id: userId });
       return {
         code: 200,
