@@ -1,15 +1,38 @@
-import mongoose, { Document, Schema } from "mongoose";
+// models/Admin.js
+import mongoose from "mongoose";
 
-const adminSchema = new Schema(
-  {
-    email: { type: String, required: true, index: true },
-    password: { type: String, required: true },
+const adminSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
   },
-  {
-    timestamps: true,
-    collection: "Admin",
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    lowercase: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  role: {
+    type: String,
+    enum: ['admin', 'superadmin'],
+    default: 'admin'
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  lastLogin: {
+    type: Date
   }
-);
+}, {
+  timestamps: true
+});
 
 const AdminModel = mongoose.model("Admin", adminSchema);
 export default AdminModel;

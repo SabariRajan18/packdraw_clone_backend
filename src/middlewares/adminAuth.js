@@ -1,21 +1,58 @@
+// middlewares/AdminTokenAuth.js
 import jwt from "jsonwebtoken";
+import AdminModel from "../models/Admins.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "mySecretKey";
-
-export const adminAuth = (req, res, next) => {
-  const token = req.headers["authorization"];
-  if (!token) {
-    res
-      .status(401)
-      .json({ message: "Authorization Admin token missing or malformed" });
-    return;
-  }
+export const adminTokenAuth = async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.userId = decoded.userId;
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+    
+    if (!token) {
+      return res.status(401).json({
+        code: 401,
+        status: false,
+        message: "Access denied. No token provided.",
+        data: null,
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    if (decoded.type !== 'admin') {
+      return res.status(403).json({
+        code: 403,
+        status: false,
+        message: "Invalid token type.",
+        data: null,
+      });
+    }
+
+    const admin = await AdminModel.findById(decoded.userId).select("-password");
+    if (!admin) {
+      return res.status(401).json({
+        code: 401,
+        status: false,
+        message: "Invalid token.",
+        data: null,
+      });
+    }
+
+    if (!admin.isActive) {
+      return res.status(401).json({
+        code: 401,
+        status: false,
+        message: "Admin account is deactivated.",
+        data: null,
+      });
+    }
+
+    req.admin = admin;
     next();
   } catch (error) {
-    res.status(403).json({ message: "Invalid or expired token" });
-    return;
+    return res.status(401).json({
+      code: 401,
+      status: false,
+      message: "Invalid token.",
+      data: null,
+    });
   }
 };

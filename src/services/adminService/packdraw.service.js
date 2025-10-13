@@ -1,6 +1,8 @@
+// services/adminService/packdraw.service.js
 import PackDrawModel from "../../models/Packdraw.js";
 import PacksItemsModel from "../../models/PacksItems.js";
 import { uploadImage } from "../../config/cloudinary.js";
+
 export default new class AdminPackDrawService {
   addPacks = async (request) => {
     try {
@@ -48,6 +50,7 @@ export default new class AdminPackDrawService {
       };
     }
   };
+
   updatePacks = async (request) => {
     try {
       const { packAmount, image, packsId } = request.body;
@@ -100,6 +103,7 @@ export default new class AdminPackDrawService {
       };
     }
   };
+
   addPacksItems = async (req) => {
     try {
       const { packsId, itemId } = req;
@@ -112,9 +116,9 @@ export default new class AdminPackDrawService {
           data: null,
         };
       }
-      const isAlreadyAdded = await PackDrawModel.findOneAndUpdate({
+      const isAlreadyAdded = await PackDrawModel.findOne({
         _id: packsId,
-        "items._id": itemId,
+        items: itemId
       });
       if (isAlreadyAdded) {
         return {
@@ -124,8 +128,8 @@ export default new class AdminPackDrawService {
           data: null,
         };
       }
-      await PackDrawModel.findOneAndUpdate(
-        { _id: packsId },
+      await PackDrawModel.findByIdAndUpdate(
+        packsId,
         { $push: { items: itemId } }
       );
       return {
@@ -143,6 +147,7 @@ export default new class AdminPackDrawService {
       };
     }
   };
+
   removePacksItems = async (req) => {
     try {
       const { packsId, itemId } = req;
@@ -155,9 +160,9 @@ export default new class AdminPackDrawService {
           data: null,
         };
       }
-      const isAlreadyAdded = await PackDrawModel.findOneAndUpdate({
+      const isAlreadyAdded = await PackDrawModel.findOne({
         _id: packsId,
-        "items._id": itemId,
+        items: itemId
       });
       if (!isAlreadyAdded) {
         return {
@@ -167,8 +172,8 @@ export default new class AdminPackDrawService {
           data: null,
         };
       }
-      await PackDrawModel.findOneAndUpdate(
-        { _id: packsId },
+      await PackDrawModel.findByIdAndUpdate(
+        packsId,
         { $pull: { items: itemId } }
       );
       return {
@@ -186,11 +191,14 @@ export default new class AdminPackDrawService {
       };
     }
   };
+
   addPacksProducts = async (req) => {
     try {
       const file = req.file;
       const { name, amount } = req.body;
-      if (!name || !image || !amount) {
+      
+      // Fixed: removed !image check since it's not in req.body
+      if (!name || !amount) {
         return {
           code: 400,
           status: false,
@@ -225,6 +233,7 @@ export default new class AdminPackDrawService {
       };
     }
   };
+
   updatePacksProducts = async (req) => {
     try {
       const file = req.file;
@@ -238,7 +247,9 @@ export default new class AdminPackDrawService {
           data: null,
         };
       }
-      if (image === "" || !file) {
+      
+      // Fixed: Check if no file and no existing image
+      if (!image && !file) {
         return {
           code: 400,
           status: false,
@@ -246,11 +257,16 @@ export default new class AdminPackDrawService {
           data: null,
         };
       }
-      const filename = `item_${Date.now()}_${file.originalname}`;
-      const imageUrl = await uploadImage(file.buffer, filename);
+      
+      let imageUrl = image;
+      if (file) {
+        const filename = `item_${Date.now()}_${file.originalname}`;
+        imageUrl = await uploadImage(file.buffer, filename);
+      }
+
       const updatedItem = await PacksItemsModel.findByIdAndUpdate(
-        { _id: itemId },
-        { name, image: image !== "" ? image : imageUrl, amount },
+        itemId,
+        { name, image: imageUrl, amount },
         { new: true, runValidators: true }
       );
       return {
@@ -268,4 +284,213 @@ export default new class AdminPackDrawService {
       };
     }
   };
-}
+
+  // NEW METHODS FOR FRONTEND
+  getPacks = async (query = {}) => {
+    try {
+      const { page = 1, limit = 10, search = '' } = query;
+      const skip = (page - 1) * limit;
+
+      const filter = {};
+      if (search) {
+        filter.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { creator: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      const packs = await PackDrawModel.find(filter)
+        .populate('items')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      const total = await PackDrawModel.countDocuments(filter);
+
+      return {
+        code: 200,
+        status: true,
+        message: "Packs retrieved successfully",
+        data: {
+          packs,
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            pages: Math.ceil(total / limit)
+          }
+        },
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+
+  getPackById = async (packId) => {
+    try {
+      const pack = await PackDrawModel.findById(packId).populate('items');
+      if (!pack) {
+        return {
+          code: 404,
+          status: false,
+          message: "Pack not found",
+          data: null,
+        };
+      }
+
+      return {
+        code: 200,
+        status: true,
+        message: "Pack retrieved successfully",
+        data: pack,
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+
+  deletePack = async (packId) => {
+    try {
+      const pack = await PackDrawModel.findById(packId);
+      if (!pack) {
+        return {
+          code: 404,
+          status: false,
+          message: "Pack not found",
+          data: null,
+        };
+      }
+
+      await PackDrawModel.findByIdAndDelete(packId);
+
+      return {
+        code: 200,
+        status: true,
+        message: "Pack deleted successfully",
+        data: null,
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+
+  getItems = async (query = {}) => {
+    try {
+      const { page = 1, limit = 10, search = '' } = query;
+      const skip = (page - 1) * limit;
+
+      const filter = {};
+      if (search) {
+        filter.name = { $regex: search, $options: 'i' };
+      }
+
+      const items = await PacksItemsModel.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      const total = await PacksItemsModel.countDocuments(filter);
+
+      return {
+        code: 200,
+        status: true,
+        message: "Items retrieved successfully",
+        data: {
+          items,
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            pages: Math.ceil(total / limit)
+          }
+        },
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+
+  getItemById = async (itemId) => {
+    try {
+      const item = await PacksItemsModel.findById(itemId);
+      if (!item) {
+        return {
+          code: 404,
+          status: false,
+          message: "Item not found",
+          data: null,
+        };
+      }
+
+      return {
+        code: 200,
+        status: true,
+        message: "Item retrieved successfully",
+        data: item,
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+
+  deleteItem = async (itemId) => {
+    try {
+      const item = await PacksItemsModel.findById(itemId);
+      if (!item) {
+        return {
+          code: 404,
+          status: false,
+          message: "Item not found",
+          data: null,
+        };
+      }
+
+      // Remove item from all packs
+      await PackDrawModel.updateMany(
+        { items: itemId },
+        { $pull: { items: itemId } }
+      );
+
+      await PacksItemsModel.findByIdAndDelete(itemId);
+
+      return {
+        code: 200,
+        status: true,
+        message: "Item deleted successfully",
+        data: null,
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+}();
