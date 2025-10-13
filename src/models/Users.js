@@ -22,6 +22,7 @@ const usersSchema = new Schema(
     postcode: { type: String, default: "" },
     country: { type: String, default: "" },
     phone_number: { type: String, default: "" },
+    profileImage: { type: String, default: "" },
   },
   {
     timestamps: true,
