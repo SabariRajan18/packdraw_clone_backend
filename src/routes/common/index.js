@@ -1,6 +1,9 @@
 import { Router } from "express";
 import CommonController from "../../controllers/common/packs.js";
-import { userTokenAuth, userTokenAuthuser } from "../../middlewares/UserTokenAuth.js";
+import {
+  userTokenAuth,
+  userTokenAuthuser,
+} from "../../middlewares/UserTokenAuth.js";
 import upload from "../../middlewares/multer.js";
 import profileImageController from "../../controllers/userController/profileImage.controller.js";
 const router = Router();
@@ -9,7 +12,7 @@ router.get("/get-all-packs", CommonController.getAllPacks);
 router.post(
   "/profile/image",
   userTokenAuthuser,
-  upload.single('profileImage'), 
+  upload.single("profileImage"),
   profileImageController.uploadProfileImage
 );
 
@@ -24,4 +27,6 @@ router.get(
   userTokenAuthuser,
   profileImageController.getUserProfile
 );
+
+router.post("/get-one-packs-details", CommonController.getOnePacksDetails);
 export default router;

@@ -45,3 +45,14 @@ export const verify2FA = (secret, userToken) => {
 
   return verified;
 };
+
+export const deductAmount = async (userId) => {
+  try {
+    if (!userId) {
+      return { message: "Can't Find User!" };
+    };
+    
+  } catch (error) {
+    console.error({ deductAmount: error });
+  }
+};

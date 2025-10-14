@@ -3,7 +3,7 @@ import PackDrawModel from "../../models/Packdraw.js";
 import PacksItemsModel from "../../models/PacksItems.js";
 import { uploadImage } from "../../config/cloudinary.js";
 
-export default new class AdminPackDrawService {
+export default new (class AdminPackDrawService {
   addPacks = async (request) => {
     try {
       const { packAmount, creator, name } = request.body;
@@ -104,9 +104,9 @@ export default new class AdminPackDrawService {
     }
   };
 
-  addPacksItems = async (req) => {
+  addPacksItems = async (req_Body) => {
     try {
-      const { packsId, itemId } = req;
+      const { packsId, itemId } = req_Body;
       const isItem = await PacksItemsModel.findOne({ _id: itemId });
       if (!isItem) {
         return {
@@ -118,7 +118,7 @@ export default new class AdminPackDrawService {
       }
       const isAlreadyAdded = await PackDrawModel.findOne({
         _id: packsId,
-        items: itemId
+        items: itemId,
       });
       if (isAlreadyAdded) {
         return {
@@ -128,10 +128,9 @@ export default new class AdminPackDrawService {
           data: null,
         };
       }
-      await PackDrawModel.findByIdAndUpdate(
-        packsId,
-        { $push: { items: itemId } }
-      );
+      await PackDrawModel.findByIdAndUpdate(packsId, {
+        $push: { items: itemId },
+      });
       return {
         code: 200,
         status: true,
@@ -139,6 +138,7 @@ export default new class AdminPackDrawService {
         data: null,
       };
     } catch (error) {
+      console.log({error})
       return {
         code: 500,
         status: false,
@@ -162,7 +162,7 @@ export default new class AdminPackDrawService {
       }
       const isAlreadyAdded = await PackDrawModel.findOne({
         _id: packsId,
-        items: itemId
+        items: itemId,
       });
       if (!isAlreadyAdded) {
         return {
@@ -172,10 +172,9 @@ export default new class AdminPackDrawService {
           data: null,
         };
       }
-      await PackDrawModel.findByIdAndUpdate(
-        packsId,
-        { $pull: { items: itemId } }
-      );
+      await PackDrawModel.findByIdAndUpdate(packsId, {
+        $pull: { items: itemId },
+      });
       return {
         code: 200,
         status: true,
@@ -196,8 +195,7 @@ export default new class AdminPackDrawService {
     try {
       const file = req.file;
       const { name, amount } = req.body;
-      
-      // Fixed: removed !image check since it's not in req.body
+
       if (!name || !amount) {
         return {
           code: 400,
@@ -247,7 +245,7 @@ export default new class AdminPackDrawService {
           data: null,
         };
       }
-      
+
       // Fixed: Check if no file and no existing image
       if (!image && !file) {
         return {
@@ -257,7 +255,7 @@ export default new class AdminPackDrawService {
           data: null,
         };
       }
-      
+
       let imageUrl = image;
       if (file) {
         const filename = `item_${Date.now()}_${file.originalname}`;
@@ -288,19 +286,19 @@ export default new class AdminPackDrawService {
   // NEW METHODS FOR FRONTEND
   getPacks = async (query = {}) => {
     try {
-      const { page = 1, limit = 10, search = '' } = query;
+      const { page = 1, limit = 10, search = "" } = query;
       const skip = (page - 1) * limit;
 
       const filter = {};
       if (search) {
         filter.$or = [
-          { name: { $regex: search, $options: 'i' } },
-          { creator: { $regex: search, $options: 'i' } }
+          { name: { $regex: search, $options: "i" } },
+          { creator: { $regex: search, $options: "i" } },
         ];
       }
 
       const packs = await PackDrawModel.find(filter)
-        .populate('items')
+        .populate("items")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -317,8 +315,8 @@ export default new class AdminPackDrawService {
             page: parseInt(page),
             limit: parseInt(limit),
             total,
-            pages: Math.ceil(total / limit)
-          }
+            pages: Math.ceil(total / limit),
+          },
         },
       };
     } catch (error) {
@@ -333,7 +331,7 @@ export default new class AdminPackDrawService {
 
   getPackById = async (packId) => {
     try {
-      const pack = await PackDrawModel.findById(packId).populate('items');
+      const pack = await PackDrawModel.findById(packId).populate("items");
       if (!pack) {
         return {
           code: 404,
@@ -391,12 +389,12 @@ export default new class AdminPackDrawService {
 
   getItems = async (query = {}) => {
     try {
-      const { page = 1, limit = 10, search = '' } = query;
+      const { page = 1, limit = 10, search = "" } = query;
       const skip = (page - 1) * limit;
 
       const filter = {};
       if (search) {
-        filter.name = { $regex: search, $options: 'i' };
+        filter.name = { $regex: search, $options: "i" };
       }
 
       const items = await PacksItemsModel.find(filter)
@@ -416,8 +414,8 @@ export default new class AdminPackDrawService {
             page: parseInt(page),
             limit: parseInt(limit),
             total,
-            pages: Math.ceil(total / limit)
-          }
+            pages: Math.ceil(total / limit),
+          },
         },
       };
     } catch (error) {
@@ -493,4 +491,4 @@ export default new class AdminPackDrawService {
       };
     }
   };
-}();
+})();
