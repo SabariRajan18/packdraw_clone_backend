@@ -5,6 +5,8 @@ const router = Router();
 
 router.post("/register", UserAuthController.register);
 router.post("/login", UserAuthController.login);
+router.post("/google-auth", UserAuthController.googleAuth);
+
 router.post("/set2FAMode", userTokenAuth, UserAuthController.set2FAMode);
 router.put(
   "/change-password",

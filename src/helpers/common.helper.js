@@ -2,6 +2,7 @@ import CryptoJS from "crypto-js";
 import speakeasy from "speakeasy";
 import dotenv from "dotenv";
 import JWT from "jsonwebtoken";
+import GameChip from "../models/GameChip.js";
 dotenv.config();
 
 const { JWT_SECRET, ENC_DEC_SECRET, SITE_NAME } = process.env;
@@ -46,12 +47,45 @@ export const verify2FA = (secret, userToken) => {
   return verified;
 };
 
-export const deductAmount = async (userId) => {
+export const getUserBalance = async (userId) => {
+  try {
+    const UserBalance = await GameChip.findOne({ user_id: userId });
+    if (UserBalance) {
+      return UserBalance;
+    } else {
+      const UserBalance = await GameChip.create({ user_id: userId });
+      return UserBalance;
+    }
+  } catch (error) {
+    console.error({ getUserBalance: error });
+  }
+};
+
+export const deductAmount = async (userId, amount) => {
   try {
     if (!userId) {
-      return { message: "Can't Find User!" };
-    };
-    
+      return { status: false, message: "Can't Find User!" };
+    }
+    await GameChip.findOneAndUpdate(
+      { userId },
+      { $inc: { total_chip_amount: -amount } }
+    );
+    return { status: true, message: "Amount Deducted" };
+  } catch (error) {
+    console.error({ deductAmount: error });
+  }
+};
+
+export const creditAmount = async (userId, amount) => {
+  try {
+    if (!userId) {
+      return { status: false, message: "Can't Find User!" };
+    }
+    await GameChip.findOneAndUpdate(
+      { userId },
+      { $inc: { total_chip_amount: +amount } }
+    );
+    return { status: true, message: "Amount Deducted" };
   } catch (error) {
     console.error({ deductAmount: error });
   }

@@ -39,7 +39,6 @@ class CommonPacksService {
   };
   getOnePacksDetails = async (req_Body) => {
     try {
-      console.log({ req_Body });
       const { packsId } = req_Body;
       const data = await PackDrawModel.aggregate([
         {

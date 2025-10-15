@@ -5,10 +5,10 @@ import {
 } from "../../helpers/response.helper.js";
 
 class UserBackDrawController {
-  SpinPacks = async (req, res) => {
+  spinOnePacks = async (req, res) => {
     try {
       const { userId } = req;
-      const response = await UserPacksService.spinPacks(userId, req.body);
+      const response = await UserPacksService.spinOnePacks(userId, req.body);
       await successResponse(req, res, response);
     } catch (error) {
       await errorResponse(req, res, error);

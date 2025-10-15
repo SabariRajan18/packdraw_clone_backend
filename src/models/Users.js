@@ -3,7 +3,7 @@ import mongoose, { Schema } from "mongoose";
 const usersSchema = new Schema(
   {
     email: { type: String, required: true, index: true },
-    password: { type: String, required: true },
+    password: { type: String, default: "" },
     isGoogleAct: { type: Boolean, default: false },
     authCode: { type: Number, default: 0 },
     authSecret: { type: String, default: "" },

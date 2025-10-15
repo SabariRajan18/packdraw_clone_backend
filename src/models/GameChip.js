@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 const GameChipSchema = new mongoose.Schema(
   {
     user_id: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Users",
     },
     user_table_key: {
       type: mongoose.Schema.Types.ObjectId,
@@ -34,5 +35,5 @@ const GameChipSchema = new mongoose.Schema(
   }
 );
 
-const GameChip = new mongoose.model("GameChip", GameChipSchema);
+const GameChip = mongoose.model("GameChip", GameChipSchema);
 export default GameChip;

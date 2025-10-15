@@ -20,6 +20,14 @@ class UserAuthController {
       await errorResponse(req, res, error);
     }
   };
+  googleAuth = async (req, res) => {
+    try {
+      const response = await UserAuthService.googleAuth(req.body);
+      await successResponse(req, res, response);
+    } catch (error) {
+      await errorResponse(req, res, error);
+    }
+  };
   set2FAMode = async (req, res) => {
     try {
       const response = await UserAuthService.set2FAMode(req, req.body);
