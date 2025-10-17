@@ -8,6 +8,7 @@ import {
   verify2FA,
   genAuthToken,
   generate2FASecret,
+  getUserBalance,
 } from "../../helpers/common.helper.js";
 import sendMailer from "../../helpers/mail.helper.js";
 class UserAuthService {
@@ -119,7 +120,7 @@ class UserAuthService {
 
           // Clean up verification record
           await VerifyUsersModel.deleteOne({ email });
-
+          await getUserBalance(newUser._id);  
           return {
             code: 200,
             status: true,

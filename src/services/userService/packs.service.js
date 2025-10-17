@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import UsersModel from "../../models/Users.js";
 import PackDrawModel from "../../models/Packdraw.js";
 import PacksItemModel from "../../models/PacksItems.js";
@@ -69,6 +70,91 @@ class UserPacksService {
       }
     } catch (error) {
       console.error("spinOnePacks error:", error);
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+  getAllPacksId = async () => {
+    try {
+      const packsIds = await PackDrawModel.find({}, { _id: 1 });
+      if (packsIds.length > 0) {
+        return {
+          code: 200,
+          status: true,
+          message: "Packs Ids Retrived Successfully",
+          data: packsIds,
+        };
+      } else {
+        return {
+          code: 403,
+          status: false,
+          message: "No Packs Found",
+          data: null,
+        };
+      }
+    } catch (error) {
+      console.error("getAllPacksId error:", error);
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+  getPacksIdsDetails = async (req_Body) => {
+    try {
+      const { packsId } = req_Body;
+      const data = await PackDrawModel.aggregate([
+        {
+          $match: {
+            _id: {
+              $in: packsId.map((id) => new mongoose.Types.ObjectId(id)),
+            },
+          },
+        },
+        {
+          $unwind: {
+            path: "$items",
+          },
+        },
+        {
+          $lookup: {
+            from: "PacksItems",
+            localField: "items",
+            foreignField: "_id",
+            as: "itemsData",
+          },
+        },
+        {
+          $unwind: {
+            path: "$itemsData",
+          },
+        },
+        {
+          $group: {
+            _id: "$_id",
+            name: { $first: "$name" },
+            wallpaper: { $first: "$wallpaper" },
+            packAmount: { $first: "$packAmount" },
+            creator: { $first: "$creator" },
+            packsItemDet: { $push: "$itemsData" },
+          },
+        },
+      ]);
+      console.log({ data });
+      return {
+        code: 200,
+        status: true,
+        message: "Get One Packs Details Retrived",
+        data: data || [],
+      };
+    } catch (error) {
+      console.log({ getOnePacksDetails: error });
       return {
         code: 500,
         status: false,

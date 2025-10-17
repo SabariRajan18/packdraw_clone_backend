@@ -28,5 +28,4 @@ router.get(
   profileImageController.getUserProfile
 );
 
-router.post("/get-one-packs-details", CommonController.getOnePacksDetails);
 export default router;

@@ -13,14 +13,6 @@ class CommonPacksController {
       await errorResponse(req, res, error);
     }
   };
-  getOnePacksDetails = async (req, res) => {
-    try {
-      const response = await CommonPacksService.getOnePacksDetails(req.body);
-      await successResponse(req, res, response);
-    } catch (error) {
-      await errorResponse(req, res, error);
-    }
-  };
 }
 
 export default new CommonPacksController();
