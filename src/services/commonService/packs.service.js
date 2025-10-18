@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import PackDrawModel from "../../models/Packdraw.js";
 import PacksItemsModel from "../../models/PacksItems.js";
+import PacksImagesModel from "../../models/PacksImages.js";
 class CommonPacksService {
   getAllPacks = async (req_Query) => {
     try {
@@ -27,6 +28,24 @@ class CommonPacksService {
             hasPrevPage: page > 1,
           },
         },
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+  getAllPacksWallPapers = async (req_Query) => {
+    try {
+      const data = await PacksImagesModel.find({});
+      return {
+        code: 200,
+        status: true,
+        message: "Packs Wallpapers Retrived",
+        data: data || [],
       };
     } catch (error) {
       return {

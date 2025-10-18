@@ -129,16 +129,16 @@ class AdminPackDrawController {
       const packsWithItems = await PackDrawModel.aggregate([
         {
           $project: {
-            itemCount: { $size: "$items" }
-          }
+            itemCount: { $size: "$items" },
+          },
         },
         {
           $group: {
             _id: null,
             totalItemsInPacks: { $sum: "$itemCount" },
-            averageItemsPerPack: { $avg: "$itemCount" }
-          }
-        }
+            averageItemsPerPack: { $avg: "$itemCount" },
+          },
+        },
       ]);
 
       await successResponse(req, res, {
@@ -149,9 +149,18 @@ class AdminPackDrawController {
           totalPacks,
           totalItems,
           totalItemsInPacks: packsWithItems[0]?.totalItemsInPacks || 0,
-          averageItemsPerPack: packsWithItems[0]?.averageItemsPerPack || 0
+          averageItemsPerPack: packsWithItems[0]?.averageItemsPerPack || 0,
         },
       });
+    } catch (error) {
+      await errorResponse(req, res, error);
+    }
+  };
+
+  createPacksImages = async (req, res) => {
+    try {
+      const response = await AdminPackDrawService.createPacksImages(req);
+      await successResponse(req, res, response);
     } catch (error) {
       await errorResponse(req, res, error);
     }

@@ -1,6 +1,7 @@
 // services/adminService/packdraw.service.js
 import PackDrawModel from "../../models/Packdraw.js";
 import PacksItemsModel from "../../models/PacksItems.js";
+import PacksImagesModel from "../../models/PacksImages.js";
 import { uploadImage } from "../../config/cloudinary.js";
 
 export default new (class AdminPackDrawService {
@@ -138,7 +139,7 @@ export default new (class AdminPackDrawService {
         data: null,
       };
     } catch (error) {
-      console.log({error})
+      console.log({ error });
       return {
         code: 500,
         status: false,
@@ -483,6 +484,42 @@ export default new (class AdminPackDrawService {
         data: null,
       };
     } catch (error) {
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+
+  createPacksImages = async (req) => {
+    try {
+      const file = req.file;
+
+      if (!file) {
+        return {
+          code: 400,
+          status: false,
+          message: "No file uploaded!",
+          data: null,
+        };
+      }
+      const filename = `item_${Date.now()}_${file.originalname}`;
+      const imageUrl = await uploadImage(file.buffer, filename);
+      const newItem = new PacksImagesModel({
+        name: req.body.name !== "" ? req.body.name : "",
+        wallpaper: imageUrl,
+      });
+      await newItem.save();
+      return {
+        code: 201,
+        status: true,
+        message: "Packs Images created successfully",
+        data: newItem,
+      };
+    } catch (error) {
+      console.error({ createPacksImages: error });
       return {
         code: 500,
         status: false,

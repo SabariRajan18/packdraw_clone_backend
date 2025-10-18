@@ -7,6 +7,7 @@ import {
   deductAmount,
   getUserBalance,
 } from "../../helpers/common.helper.js";
+import { uploadImage } from "../../config/cloudinary.js";
 import SpinHistoryModel from "../../models/SpinHistory.js";
 class UserPacksService {
   spinOnePacks = async (userId, req_Body) => {
@@ -155,6 +156,73 @@ class UserPacksService {
       };
     } catch (error) {
       console.log({ getOnePacksDetails: error });
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+  createPacks = async (req, req_Body) => {
+    try {
+      const file = req.file;
+      if (!file && !req.body.image) {
+        return {
+          code: 400,
+          status: false,
+          message: "No file uploaded!",
+          data: null,
+        };
+      }
+      if (!req_Body.name) {
+        return {
+          code: 400,
+          status: false,
+          message: "packs name is  required!",
+          data: null,
+        };
+      }
+      if (!req_Body.packAmount) {
+        return {
+          code: 400,
+          status: false,
+          message: "packAmount is required!",
+          data: null,
+        };
+      }
+      if (!req_Body.outCome) {
+        return {
+          code: 400,
+          status: false,
+          message: "outcome percentage is required!",
+          data: null,
+        };
+      }
+      let imageUrl;
+      if (file) {
+        const filename = `item_${Date.now()}_${file.originalname}`;
+        imageUrl = await uploadImage(file.buffer, filename);
+      } else {
+        imageUrl = req.body.image;
+      }
+
+      const packsDet = await PackDrawModel.create({
+        name: req_Body.name,
+        packAmount: req_Body.packAmount,
+        wallpaper: imageUrl,
+        creator: "User",
+        creatorId: req.userId,
+        outCome: req_Body.outCome,
+      });
+      return {
+        code: 200,
+        status: true,
+        message: "Packs Created Successfully",
+        data: packsDet,
+      };
+    } catch (error) {
+      console.log({ createPacks: error });
       return {
         code: 500,
         status: false,

@@ -13,6 +13,14 @@ class CommonPacksController {
       await errorResponse(req, res, error);
     }
   };
+  getAllPacksWallPapers = async (req, res) => {
+    try {
+      const response = await CommonPacksService.getAllPacksWallPapers(req.query);
+      await successResponse(req, res, response);
+    } catch (error) {
+      await errorResponse(req, res, error);
+    }
+  };
 }
 
 export default new CommonPacksController();

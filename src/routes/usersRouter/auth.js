@@ -16,4 +16,5 @@ router.put(
 router.put("/update-user", userTokenAuth, UserAuthController.updateUserData);
 router.get("/get-user", userTokenAuth, UserAuthController.getUser);
 
+
 export default router;

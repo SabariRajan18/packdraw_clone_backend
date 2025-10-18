@@ -9,6 +9,8 @@ import profileImageController from "../../controllers/userController/profileImag
 const router = Router();
 
 router.get("/get-all-packs", CommonController.getAllPacks);
+router.get("/get-all-packs-wallpapers", CommonController.getAllPacksWallPapers);
+
 router.post(
   "/profile/image",
   userTokenAuthuser,

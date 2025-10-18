@@ -30,6 +30,14 @@ class UserBackDrawController {
       await errorResponse(req, res, error);
     }
   };
+  createPacks = async (req, res) => {
+    try {
+      const response = await UserPacksService.createPacks(req, req.body);
+      await successResponse(req, res, response);
+    } catch (error) {
+      await errorResponse(req, res, error);
+    }
+  };
 }
 
 export default new UserBackDrawController();
