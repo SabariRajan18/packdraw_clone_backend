@@ -21,4 +21,8 @@ router.post(
   upload.single("file"),
   UserPackDrawController.createPacks
 );
+router.get(
+  "/getItems",
+  UserPackDrawController.getItems
+);
 export default router;

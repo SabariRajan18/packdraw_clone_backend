@@ -38,6 +38,8 @@ router.get("/users",  AdminUserController.getUsers);
 router.get("/users/:id",  AdminUserController.getUserById);
 router.put("/users/:id",  AdminUserController.updateUser);
 router.patch("/users/:id/toggle-status",  AdminUserController.toggleUserStatus);
+router.get("/items",  AdminPackDrawController.getItems);
+
 router.get("/users/:id/transactions",  AdminUserController.getUserTransactions);
 
 router.get("/transactions",  AdminTransactionController.getTransactions);

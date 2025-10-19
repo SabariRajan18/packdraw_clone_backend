@@ -12,7 +12,7 @@ class CommonPacksService {
       const allData = await PackDrawModel.find({})
         .skip(skip)
         .limit(limit)
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 }).populate("wallpaper");
       const total = await PackDrawModel.countDocuments();
       return {
         status: true,
