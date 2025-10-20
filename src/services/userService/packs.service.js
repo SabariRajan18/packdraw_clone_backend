@@ -3,6 +3,8 @@ import UsersModel from "../../models/Users.js";
 import PackDrawModel from "../../models/Packdraw.js";
 import PacksItemModel from "../../models/PacksItems.js";
 import {
+  calculateTotalAmount,
+  calculateTotalRewardAmount,
   creditAmount,
   deductAmount,
   getUserBalance,
@@ -11,9 +13,9 @@ import { uploadImage } from "../../config/cloudinary.js";
 import SpinHistoryModel from "../../models/SpinHistory.js";
 import PacksItemsModel from "../../models/PacksItems.js";
 class UserPacksService {
-  spinOnePacks = async (userId, req_Body) => {
+  spinPacks = async (userId, req_Body) => {
     try {
-      const { packsIds, itemId } = req_Body;
+      const { packsIds, itemIds } = req_Body;
       const userDet = await UsersModel.findOne({ _id: userId });
       if (!userDet) {
         return {
@@ -23,8 +25,16 @@ class UserPacksService {
           data: null,
         };
       }
-      const isPacks = await PackDrawModel.findOne({ _id: packsIds[0] });
-      if (!isPacks) {
+      const packsDet = await PackDrawModel.find({
+        _id: { $in: packsIds.map((id) => new mongoose.Types.ObjectId(id)) },
+      })
+        .populate({
+          path: "items",
+          model: "PacksItems",
+        })
+        .populate("wallpaper");
+
+      if (packsDet.length <= 0) {
         return {
           code: 403,
           status: false,
@@ -32,41 +42,49 @@ class UserPacksService {
           data: null,
         };
       }
+      const rewardItems = await PacksItemModel.find({
+        _id: { $in: itemIds.map((id) => new mongoose.Types.ObjectId(id)) },
+      });
 
-      const isPacksItem = await PacksItemModel.findOne({ _id: itemId });
-      if (!isPacksItem) {
-        return {
-          code: 403,
-          status: false,
-          message: "Packs Item Not Found",
-          data: null,
-        };
-      }
-      const userBalance = await getUserBalance(userId);
-      console.log(userBalance.total_chip_amount, isPacks.packAmount);
-      if (userBalance.total_chip_amount >= isPacks.packAmount) {
-        const isDeducted = await deductAmount(userId, isPacks.packAmount);
-        const isCredited = await creditAmount(userId, isPacksItem.amount);
-        const spinHistory = await SpinHistoryModel.create({
-          userId: userId,
-          packsId: isPacks._id,
-          spinAmount: isPacks.packAmount,
-          rewardItemId: itemId,
-          rewardAmount: isPacksItem.amount,
-        });
-        if (isDeducted && isCredited) {
+      if (rewardItems.length > 0) {
+        const userBalance = await getUserBalance(userId);
+        const totalAmount = await calculateTotalAmount(packsDet);
+        const totalRewardAmount = await calculateTotalRewardAmount(rewardItems);
+        if (userBalance.total_chip_amount >= totalAmount) {
+          const isDeducted = await deductAmount(userId, totalAmount);
+          const isCredited = await creditAmount(userId, totalRewardAmount);
+          const spinHistory = await SpinHistoryModel.create({
+            userId: userId,
+            packsId: JSON.stringify(
+              packsDet.map((item) => item._id.toString())
+            ),
+            spinAmount: totalAmount,
+            rewardItemId: JSON.stringify(
+              rewardItems.map((item) => item._id.toString())
+            ),
+            rewardAmount: totalRewardAmount,
+          });
+          if (isDeducted && isCredited) {
+            return {
+              code: 200,
+              status: true,
+              message: "Packs Spinned Successfully",
+              data: spinHistory,
+            };
+          }
+        } else {
           return {
-            code: 200,
-            status: true,
-            message: "Packs Spinned Successfully",
-            data: spinHistory,
+            code: 403,
+            status: false,
+            message: "Insufficient Fund",
+            data: null,
           };
         }
       } else {
         return {
           code: 403,
           status: false,
-          message: "Insufficient Fund",
+          message: "Reward Item is not found",
           data: null,
         };
       }
@@ -116,12 +134,10 @@ class UserPacksService {
         _id: { $in: packsId.map((id) => new mongoose.Types.ObjectId(id)) },
       })
         .populate({
-          path: "items", // first populate items
+          path: "items",
           model: "PacksItems",
         })
-        .populate(
-          "wallpaper" 
-        );
+        .populate("wallpaper");
       const formattedData = data.map((pack) => ({
         _id: pack._id,
         name: pack.name,
@@ -131,11 +147,18 @@ class UserPacksService {
         packsItemDet: pack.items,
       }));
 
+      const reFormattedData = packsId.flatMap((id) => {
+        const found = formattedData.find(
+          (d) => d._id.toString() === id.toString()
+        );
+        return found ? [found] : [];
+      });
+      console.log({ reFormattedData });
       return {
         code: 200,
         status: true,
         message: "Get One Packs Details Retrieved",
-        data: formattedData || [],
+        data: reFormattedData || [],
       };
     } catch (error) {
       console.log({ getOnePacksDetails: error });
@@ -148,10 +171,10 @@ class UserPacksService {
     }
   };
 
- createPacks = async (req, req_Body) => {
+  createPacks = async (req, req_Body) => {
     try {
       console.log("req_Body :>> ", req_Body);
-      
+
       // Validation
       if (!req_Body.name) {
         return {
@@ -185,7 +208,11 @@ class UserPacksService {
           data: null,
         };
       }
-      if (!req_Body.items || !Array.isArray(req_Body.items) || req_Body.items.length === 0) {
+      if (
+        !req_Body.items ||
+        !Array.isArray(req_Body.items) ||
+        req_Body.items.length === 0
+      ) {
         return {
           code: 400,
           status: false,
@@ -195,10 +222,12 @@ class UserPacksService {
       }
 
       // Extract item IDs from the items array
-      const itemIds = req_Body.items.map(item => {
-        // Handle both object with id property and direct ID string
-        return item.id || item;
-      }).filter(id => id); // Remove any null/undefined values
+      const itemIds = req_Body.items
+        .map((item) => {
+          // Handle both object with id property and direct ID string
+          return item.id || item;
+        })
+        .filter((id) => id); // Remove any null/undefined values
 
       // Validate that we have valid item IDs
       if (itemIds.length === 0) {
@@ -221,18 +250,16 @@ class UserPacksService {
         items: itemIds, // Store array of ObjectIds
       });
 
-    
       return {
         code: 200,
         status: true,
         message: "Pack Created Successfully",
-        
       };
     } catch (error) {
       console.log({ createPacks: error });
-      
+
       // Handle specific MongoDB errors
-      if (error.name === 'ValidationError') {
+      if (error.name === "ValidationError") {
         return {
           code: 400,
           status: false,
@@ -240,8 +267,8 @@ class UserPacksService {
           data: null,
         };
       }
-      
-      if (error.name === 'CastError') {
+
+      if (error.name === "CastError") {
         return {
           code: 400,
           status: false,

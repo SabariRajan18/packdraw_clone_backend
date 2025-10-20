@@ -6,9 +6,9 @@ import upload from "../../middlewares/multer.js";
 const router = Router();
 
 router.post(
-  "/spin-one-packs",
+  "/spin-packs",
   userTokenAuth,
-  UserPackDrawController.spinOnePacks
+  UserPackDrawController.spinPacks
 );
 router.get("/get-all-packsid", UserPackDrawController.getAllPacksId);
 router.post(

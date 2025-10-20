@@ -90,3 +90,19 @@ export const creditAmount = async (userId, amount) => {
     console.error({ deductAmount: error });
   }
 };
+
+export const calculateTotalAmount = (selectedPacks) => {
+  const amount = selectedPacks.reduce(
+    (acc, pack) => acc + (pack.packAmount || 0),
+    0
+  );
+  return amount;
+};
+
+export const calculateTotalRewardAmount = (selectedRewards) => {
+  const amount = selectedRewards.reduce(
+    (acc, item) => acc + (item.amount || 0),
+    0
+  );
+  return amount;
+};
