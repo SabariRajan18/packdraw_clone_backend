@@ -8,7 +8,7 @@ const SpinHistorySchema = new Schema(
       required: true,
     },
     packsId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "PackDraw",
       required: true,
     },
@@ -17,7 +17,7 @@ const SpinHistorySchema = new Schema(
       required: true,
     },
     rewardItemId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "PacksItems",
       required: true,
     },

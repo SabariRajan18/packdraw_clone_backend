@@ -66,10 +66,12 @@ export const deductAmount = async (userId, amount) => {
     if (!userId) {
       return { status: false, message: "Can't Find User!" };
     }
+    console.log("Amount Deducting Process");
     await GameChip.findOneAndUpdate(
-      { userId },
+      { user_id: userId },
       { $inc: { total_chip_amount: -amount } }
     );
+    console.log("Amount Deducting Completed");
     return { status: true, message: "Amount Deducted" };
   } catch (error) {
     console.error({ deductAmount: error });
@@ -81,10 +83,12 @@ export const creditAmount = async (userId, amount) => {
     if (!userId) {
       return { status: false, message: "Can't Find User!" };
     }
+    console.log("Amount Crediting Process");
     await GameChip.findOneAndUpdate(
-      { userId },
+      { user_id: userId },
       { $inc: { total_chip_amount: +amount } }
     );
+    console.log("Amount Crediting Completed");
     return { status: true, message: "Amount Deducted" };
   } catch (error) {
     console.error({ deductAmount: error });

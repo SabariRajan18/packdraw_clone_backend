@@ -33,8 +33,11 @@ class UserPacksService {
           model: "PacksItems",
         })
         .populate("wallpaper");
-
-      if (packsDet.length <= 0) {
+      const actualPacksDet = packsIds.flatMap((id) => {
+        const found = packsDet.find((d) => d._id.toString() === id.toString());
+        return found ? [found] : [];
+      });
+      if (actualPacksDet.length <= 0) {
         return {
           code: 403,
           status: false,
@@ -48,19 +51,28 @@ class UserPacksService {
 
       if (rewardItems.length > 0) {
         const userBalance = await getUserBalance(userId);
-        const totalAmount = await calculateTotalAmount(packsDet);
-        const totalRewardAmount = await calculateTotalRewardAmount(rewardItems);
+        const totalAmount = await calculateTotalAmount(actualPacksDet);
+
+        const actualRewardDet = itemIds.flatMap((id) => {
+          const found = rewardItems.find(
+            (d) => d._id.toString() === id.toString()
+          );
+          return found ? [found] : [];
+        });
+        const totalRewardAmount = await calculateTotalRewardAmount(
+          actualRewardDet
+        );
         if (userBalance.total_chip_amount >= totalAmount) {
           const isDeducted = await deductAmount(userId, totalAmount);
           const isCredited = await creditAmount(userId, totalRewardAmount);
           const spinHistory = await SpinHistoryModel.create({
             userId: userId,
             packsId: JSON.stringify(
-              packsDet.map((item) => item._id.toString())
+              actualPacksDet.map((item) => item._id.toString())
             ),
             spinAmount: totalAmount,
             rewardItemId: JSON.stringify(
-              rewardItems.map((item) => item._id.toString())
+              actualRewardDet.map((item) => item._id.toString())
             ),
             rewardAmount: totalRewardAmount,
           });
@@ -153,7 +165,6 @@ class UserPacksService {
         );
         return found ? [found] : [];
       });
-      console.log({ reFormattedData });
       return {
         code: 200,
         status: true,
@@ -173,8 +184,6 @@ class UserPacksService {
 
   createPacks = async (req, req_Body) => {
     try {
-      console.log("req_Body :>> ", req_Body);
-
       // Validation
       if (!req_Body.name) {
         return {
