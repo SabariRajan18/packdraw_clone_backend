@@ -5,6 +5,15 @@ import {
 } from "../../helpers/response.helper.js";
 
 class UserBackDrawController {
+  getRewardIds = async (req, res) => {
+    try {
+      const { userId } = req;
+      const response = await UserPacksService.getRewardIds(userId, req.body);
+      await successResponse(req, res, response);
+    } catch (error) {
+      await errorResponse(req, res, error);
+    }
+  };
   spinPacks = async (req, res) => {
     try {
       const { userId } = req;

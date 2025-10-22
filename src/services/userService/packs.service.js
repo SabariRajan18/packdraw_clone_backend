@@ -2,17 +2,203 @@ import mongoose from "mongoose";
 import UsersModel from "../../models/Users.js";
 import PackDrawModel from "../../models/Packdraw.js";
 import PacksItemModel from "../../models/PacksItems.js";
+import PacksSpendModel from "../../models/UserPacksSpend.js";
 import {
   calculateTotalAmount,
   calculateTotalRewardAmount,
   creditAmount,
   deductAmount,
+  getOneRandomId,
+  getOrCreateUserSpends,
   getUserBalance,
+  rewardScript,
 } from "../../helpers/common.helper.js";
 import { uploadImage } from "../../config/cloudinary.js";
 import SpinHistoryModel from "../../models/SpinHistory.js";
 import PacksItemsModel from "../../models/PacksItems.js";
 class UserPacksService {
+  getRewardIds = async (userId, req_Body) => {
+    try {
+      const { packsIds } = req_Body;
+      if (packsIds?.length <= 0) {
+        return {
+          code: 403,
+          status: false,
+          message: "Packs Id Not Found",
+          data: null,
+        };
+      }
+
+      // user spending datas
+      const userSpends = await getOrCreateUserSpends(packsIds);
+      const formattedUserSpends = packsIds.flatMap((id) => {
+        const found = userSpends.find(
+          (d) => d._id.toString() === id.toString()
+        );
+        return found ? [found] : [];
+      });
+
+      // pack draw datas
+      const packDrawData = await PackDrawModel.find({
+        _id: { $in: packsIds.map((id) => new mongoose.Types.ObjectId(id)) },
+      });
+      const formattedPackDraw = packsIds.flatMap((id) => {
+        const found = packDrawData.find(
+          (d) => d._id.toString() === id.toString()
+        );
+        return found ? [found] : [];
+      });
+
+      let allRewardIds = [];
+      // if (formattedPackDraw.length > 0) {
+      //   for (let idx = 0; idx < formattedPackDraw.length; idx++) {
+      //     const element = formattedPackDraw[idx];
+
+      //     const totalBetAmount = await calculateTotalAmount([element]);
+      //     await PacksSpendModel.findOneAndUpdate(
+      //       {
+      //         packsId: element._id,
+      //       },
+      //       { $inc: { totalSpends: totalBetAmount } }
+      //     );
+
+      //     const updatedSpendData = await PacksSpendModel.findOne({
+      //       packsId: element._id,
+      //     });
+      //     const rareMultiPlayerAmount =
+      //       element.packAmount * element.rareMultiPlayer || 10;
+      //     const epicMultiPlayerAmount =
+      //       element.packAmount * element.epicMultiPlayer || 20;
+
+      //     // Rare Reward Found!
+      //     if (updatedSpendData.totalSpends >= rareMultiPlayerAmount) {
+      //       if (updatedSpendData.isRareReached) {
+      //         // 2 Common 1 Rare
+      //         const rewards = await rewardScript(
+      //           "Two-Common-One-Rare",
+      //           element
+      //         );
+      //         continue;
+      //       } else {
+      //         // 2 Rare 1 Common
+      //         const rewards = await rewardScript(
+      //           "Two-Rare-One-Common",
+      //           element
+      //         );
+      //         continue;
+      //       }
+      //     }
+
+      //     // Epic Reward Found!
+      //     if (updatedSpendData.totalSpends >= epicMultiPlayerAmount) {
+      //       if (updatedSpendData.isEpicReached) {
+      //         // 2 Epic 1 Rare
+      //         const rewards = await rewardScript("Two-Epic-One-Rare", element);
+
+      //         // Reset
+      //         await PacksSpendModel.findOneAndUpdate(
+      //           {
+      //             packsId: element._id,
+      //           },
+      //           {
+      //             $set: {
+      //               totalSpends: 0,
+      //               isRareReached: false,
+      //               isEpicReached: false,
+      //             },
+      //           }
+      //         );
+      //         continue;
+      //       } else {
+      //         // 2 Rare 1 Epic
+      //         const rewards = await rewardScript("Two-Rare-One-Epic", element);
+      //         continue;
+      //       }
+      //     }
+
+      //     // Common Reward Found
+      //     if (
+      //       updatedSpendData.totalSpends < rareMultiPlayerAmount &&
+      //       updatedSpendData.totalSpends < epicMultiPlayerAmount
+      //     ) {
+      //       // 3 Common
+      //       const rewards = await rewardScript("common-only", element);
+      //       continue;
+      //     }
+      //   }
+      // }
+
+      if (formattedPackDraw.length > 0) {
+        for (let idx = 0; idx < formattedPackDraw.length; idx++) {
+          const element = formattedPackDraw[idx];
+
+          const totalBetAmount = await calculateTotalAmount([element]);
+          await PacksSpendModel.findOneAndUpdate(
+            { packsId: element._id },
+            { $inc: { totalSpends: totalBetAmount } }
+          );
+
+          const updatedSpendData = await PacksSpendModel.findOne({
+            packsId: element._id,
+          });
+
+          const rareMultiPlayerAmount =
+            element.packAmount * element.rareMultiPlayer || 10;
+          const epicMultiPlayerAmount =
+            element.packAmount * element.epicMultiPlayer || 20;
+
+          let rewards = [];
+
+          // Rare Reward
+          if (updatedSpendData.totalSpends >= rareMultiPlayerAmount) {
+            if (updatedSpendData.isRareReached) {
+              rewards = await rewardScript("Two-Common-One-Rare", element);
+            } else {
+              rewards = await rewardScript("Two-Rare-One-Common", element);
+            }
+          } else if (updatedSpendData.totalSpends >= epicMultiPlayerAmount) {
+            // Epic Reward
+            if (updatedSpendData.isEpicReached) {
+              rewards = await rewardScript("Two-Epic-One-Rare", element);
+              await PacksSpendModel.findOneAndUpdate(
+                { packsId: element._id },
+                {
+                  $set: {
+                    totalSpends: 0,
+                    isRareReached: false,
+                    isEpicReached: false,
+                  },
+                }
+              );
+            } else {
+              rewards = await rewardScript("Two-Rare-One-Epic", element);
+            }
+          } else {
+            // Common Reward
+            rewards = await rewardScript("common-only", element);
+          }
+          if (rewards?.length > 0) {
+            const winningId = getOneRandomId(rewards);
+            allRewardIds.push(winningId);
+          }
+        }
+      }
+      return {
+        code: 200,
+        status: true,
+        message: "Reward IDs Fetched Successfully",
+        data: allRewardIds,
+      };
+    } catch (error) {
+      console.error("getRewardIds error:", error);
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
   spinPacks = async (userId, req_Body) => {
     try {
       const { packsIds, itemIds } = req_Body;
@@ -230,16 +416,10 @@ class UserPacksService {
         };
       }
 
-      // Extract item IDs from the items array
-      const itemIds = req_Body.items
-        .map((item) => {
-          // Handle both object with id property and direct ID string
-          return item.id || item;
-        })
-        .filter((id) => id); // Remove any null/undefined values
-
-      // Validate that we have valid item IDs
-      if (itemIds.length === 0) {
+      const idsArray = req_Body.items.flatMap((item) =>
+        Array(item.qty).fill(item.id)
+      );
+      if (idsArray.length === 0) {
         return {
           code: 400,
           status: false,
@@ -247,16 +427,15 @@ class UserPacksService {
           data: null,
         };
       }
-
       // Create the pack
-      const packsDet = await PackDrawModel.create({
+      await PackDrawModel.create({
         name: req_Body.name,
         packAmount: req_Body.packAmount,
-        wallpaper: req_Body.wallpaper._id, // Store only the ObjectId
+        wallpaper: req_Body.wallpaper._id,
         creator: "User",
         creatorId: req.userId,
         outCome: req_Body.outCome,
-        items: itemIds, // Store array of ObjectIds
+        items: idsArray,
       });
 
       return {

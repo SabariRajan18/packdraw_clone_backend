@@ -1,8 +1,11 @@
+import mongoose from "mongoose";
 import CryptoJS from "crypto-js";
 import speakeasy from "speakeasy";
 import dotenv from "dotenv";
 import JWT from "jsonwebtoken";
 import GameChip from "../models/GameChip.js";
+import PacksItemModel from "../models/PacksItems.js";
+import PacksSpendModel from "../models/UserPacksSpend.js";
 dotenv.config();
 
 const { JWT_SECRET, ENC_DEC_SECRET, SITE_NAME } = process.env;
@@ -109,4 +112,107 @@ export const calculateTotalRewardAmount = (selectedRewards) => {
     0
   );
   return amount;
+};
+
+export const getOrCreateUserSpends = async (packsIds) => {
+  try {
+    const objectIds = packsIds.map((id) => new mongoose.Types.ObjectId(id));
+
+    const spends = await Promise.all(
+      objectIds.map(async (packsId) => {
+        const spend = await PacksSpendModel.findOneAndUpdate(
+          { packsId },
+          {
+            $setOnInsert: {
+              totalSpends: 0,
+              isRareReached: false,
+              isEpicReached: false,
+            },
+          },
+          { new: true, upsert: true }
+        );
+        return spend;
+      })
+    );
+
+    return spends;
+  } catch (error) {
+    console.error("Error in getOrCreateUserSpends:", error);
+    throw error;
+  }
+};
+
+export const rewardScript = async (rewardType, packsDet) => {
+  const allRewardsItems = await PacksItemModel.aggregate([
+    {
+      $match: {
+        _id: {
+          $in: packsDet.items.map((id) => id),
+        },
+      },
+    },
+  ]);
+
+  const getRandomItems = (arr, count) => {
+    if (!arr || arr.length === 0) return [];
+    const shuffled = arr.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  };
+
+  const getLowestAmountItems = (arr, count) => {
+    if (!arr || arr.length === 0) return [];
+    const sorted = arr.sort((a, b) => a.amount - b.amount);
+    return sorted.slice(0, count);
+  };
+
+  // Filter by amount
+  const commons = allRewardsItems.filter((item) => item.amount < 5000);
+  const rares = allRewardsItems.filter(
+    (item) => item.amount >= 5000 && item.amount < 10000
+  );
+  const epics = allRewardsItems.filter((item) => item.amount >= 10000);
+
+  let rewardArray = [];
+
+  const fillWithLowest = (arr, count) => {
+    const selected = getRandomItems(arr, count);
+    if (selected.length < count) {
+      const needed = count - selected.length;
+      const fallback = getLowestAmountItems(allRewardsItems, needed);
+      return [...selected, ...fallback];
+    }
+    return selected;
+  };
+
+  if (rewardType === "common-only") {
+    rewardArray = fillWithLowest(commons, 3);
+  } else if (rewardType === "Two-Common-One-Rare") {
+    const selectedCommons = fillWithLowest(commons, 2);
+    const selectedRares = fillWithLowest(rares, 1);
+    rewardArray = [...selectedCommons, ...selectedRares];
+  } else if (rewardType === "Two-Rare-One-Common") {
+    const selectedRares = fillWithLowest(rares, 2);
+    const selectedCommons = fillWithLowest(commons, 1);
+    rewardArray = [...selectedRares, ...selectedCommons];
+  } else if (rewardType === "Two-Epic-One-Rare") {
+    const selectedEpics = fillWithLowest(epics, 2);
+    const selectedRares = fillWithLowest(rares, 1);
+    rewardArray = [...selectedEpics, ...selectedRares];
+  } else if (rewardType === "Two-Rare-One-Epic") {
+    const selectedRares = fillWithLowest(rares, 2);
+    const selectedEpics = fillWithLowest(epics, 1);
+    rewardArray = [...selectedRares, ...selectedEpics];
+  } else {
+    return [];
+  }
+
+  // Return only valid IDs
+  return rewardArray.map((item) => item._id).filter((id) => id);
+};
+
+
+export const getOneRandomId = (arr) => {
+  if (!arr || arr.length === 0) return null;
+  const randomItem = arr[Math.floor(Math.random() * arr.length)];
+  return randomItem?._id || null;
 };
