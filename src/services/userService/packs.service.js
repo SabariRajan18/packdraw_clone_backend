@@ -179,7 +179,7 @@ class UserPacksService {
           }
           if (rewards?.length > 0) {
             const winningId = getOneRandomId(rewards);
-            allRewardIds.push(winningId);
+            allRewardIds.push({ [element._id]: winningId });
           }
         }
       }

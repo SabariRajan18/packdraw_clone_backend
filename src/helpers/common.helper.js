@@ -116,8 +116,9 @@ export const calculateTotalRewardAmount = (selectedRewards) => {
 
 export const getOrCreateUserSpends = async (packsIds) => {
   try {
+    console.log({ packsIds });
     const objectIds = packsIds.map((id) => new mongoose.Types.ObjectId(id));
-
+    console.log({ objectIds });
     const spends = await Promise.all(
       objectIds.map(async (packsId) => {
         const spend = await PacksSpendModel.findOneAndUpdate(
@@ -209,7 +210,6 @@ export const rewardScript = async (rewardType, packsDet) => {
   // Return only valid IDs
   return rewardArray.map((item) => item._id).filter((id) => id);
 };
-
 
 export const getOneRandomId = (arr) => {
   if (!arr || arr.length === 0) return null;
