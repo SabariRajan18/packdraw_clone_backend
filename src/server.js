@@ -9,6 +9,7 @@ import dotenv from "dotenv";
 import http from "http";
 import { Server } from "socket.io";
 import { setControllerSocket } from "./helpers/socket.helper.js";
+import "./cron/battle.cron.js";
 dotenv.config();
 const app = express();
 const { PORT } = process.env;

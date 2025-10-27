@@ -1,5 +1,6 @@
 import { Router } from "express";
-import CommonController from "../../controllers/common/packs.js";
+import CommonBattleController from "../../controllers/common/battles.js";
+import CommonPacksController from "../../controllers/common/packs.js";
 import {
   userTokenAuth,
   userTokenAuthuser,
@@ -8,8 +9,12 @@ import upload from "../../middlewares/multer.js";
 import profileImageController from "../../controllers/userController/profileImage.controller.js";
 const router = Router();
 
-router.get("/get-all-packs", CommonController.getAllPacks);
-router.get("/get-all-packs-wallpapers", CommonController.getAllPacksWallPapers);
+// Packs
+router.get("/get-all-packs", CommonPacksController.getAllPacks);
+router.get(
+  "/get-all-packs-wallpapers",
+  CommonPacksController.getAllPacksWallPapers
+);
 
 router.post(
   "/profile/image",
@@ -29,5 +34,9 @@ router.get(
   userTokenAuthuser,
   profileImageController.getUserProfile
 );
+
+// Battles
+
+router.get("/get-battle-configs", CommonBattleController.getBattleConfigs);
 
 export default router;

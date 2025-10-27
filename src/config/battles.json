@@ -1,0 +1,23 @@
+{
+  "name": "Battles",
+  "Battles": [
+    {
+      "type": "Solo",
+      "mode": "Solo Battles",
+      "players": ["2", "3", "4", "6"],
+      "gameMode": [
+        "Classic",
+        "Share Mode",
+        "Point Rush",
+        "Jackpot",
+        "Elimination"
+      ]
+    },
+    {
+      "type": "Team",
+      "mode": "Team Battles",
+      "players": ["2v2", "3v3", "2v2v2"],
+      "gameMode": ["Classic", "Point Rush", "Jackpot", "Elimination"]
+    }
+  ]
+}
