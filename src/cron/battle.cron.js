@@ -26,6 +26,7 @@ const moniterActiveBattle = async () => {
           },
         ],
       })
+      .limit(20)
       .lean();
     const formattedBattles = activeBattles.map((battle) => ({
       ...battle,

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import BattleConfig from "../../config/battles.json" with { type: "json" };
 import BattleModel from "../../models/Battles.js";
+import PackDrawModel from "../../models/Packdraw.js";
 class UserBattlesService {
   createBattle = async (userId, req_Body) => {
     try {
@@ -44,8 +45,11 @@ class UserBattlesService {
           message: "packsIds must be a non-empty array",
         };
       }
-
-      const data = await BattleModel.create({ ...req_Body, userId });
+      const packsDet = await PackDrawModel.find({
+              _id: { $in: packsIds.map((id) => new mongoose.Types.ObjectId(id)) },
+            });
+            const battleAmount = await calculateTotalAmount(packsDet)
+      const data = await BattleModel.create({ ...req_Body, userId,battleAmount });
       return {
         code: 200,
         status: true,

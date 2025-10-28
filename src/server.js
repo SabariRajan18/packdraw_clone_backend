@@ -10,11 +10,14 @@ import http from "http";
 import { Server } from "socket.io";
 import { setControllerSocket } from "./helpers/socket.helper.js";
 import "./cron/battle.cron.js";
+
 dotenv.config();
 const app = express();
 const { PORT } = process.env;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -22,14 +25,19 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
+
 setControllerSocket(io);
 connectDB();
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors());
+
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
+
 app.use("/api", routers);
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
+
+server.listen(PORT, () => {
+  console.log(`🚀 Server & Socket running at http://localhost:${PORT}`);
 });

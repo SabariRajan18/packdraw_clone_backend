@@ -17,6 +17,11 @@ const battleSchema = new Schema(
       type: String,
       required: true,
     },
+    battleAmount: {
+      type: Number,
+      default: 0,
+      required: true,
+    },
     battleOptions: {
       fastBattle: {
         type: Boolean,
