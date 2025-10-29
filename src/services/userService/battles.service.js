@@ -49,7 +49,7 @@ class UserBattlesService {
               _id: { $in: packsIds.map((id) => new mongoose.Types.ObjectId(id)) },
             });
             const battleAmount = await calculateTotalAmount(packsDet)
-      const data = await BattleModel.create({ ...req_Body, userId,battleAmount });
+      const data = await BattleModel.create({ ...req_Body, creatorId:userId,creatorType:"User",battleAmount });
       return {
         code: 200,
         status: true,

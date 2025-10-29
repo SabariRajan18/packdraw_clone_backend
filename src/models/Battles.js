@@ -1,6 +1,14 @@
 import mongoose, { Schema } from "mongoose";
 const battleSchema = new Schema(
   {
+    creatorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+    },
+    creatorType: {
+      type: String,
+      default: "",
+    },
     name: {
       type: String,
       default: "",

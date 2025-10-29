@@ -18,13 +18,13 @@ import commonApi from "./common/index.js";
 
 // USER ROUTERS
 router.use("/v1/users/packdraw", userBackdrawRouters);
-router.use("/v1/users/battle", userBattleRouters);
+router.use("/v1/users/battles", userBattleRouters);
 router.use("/v1/users/spin", userSpinRouters);
 router.use("/v1/users/auth", userAuthRouters);
 
 // ADMIN ROUTERS
 router.use("/v2/admin/packdraw", adminBackdrawRouters);
-router.use("/v2/admin/battle", adminBattleRouters);
+router.use("/v2/admin/battles", adminBattleRouters);
 router.use("/v2/admin/spin", adminSpinRouters);
 router.use("/v2/admin/auth", adminAuthRouters);
 
