@@ -9,12 +9,15 @@ export const getIoInstance = () => {
   return ioInstance;
 };
 export const emitToUser = (userId, event, data) => {
-  if (!ioInstance) return console.warn("⚠️ No socket instance found to emit event.");
+  console.log({ data });
+  if (!ioInstance)
+    return console.warn("⚠️ No socket instance found to emit event.");
   ioInstance.to(userId.toString()).emit(event, data);
-  console.log(`📤 Emitted "${event}" to user ${userId}`);
+  console.log(`📤 Emitted "${event}" to user ${userId} for ${data}`);
 };
 export const broadcastEvent = (event, data) => {
-  if (!ioInstance) return console.warn("⚠️ No socket instance found to broadcast.");
+  if (!ioInstance)
+    return console.warn("⚠️ No socket instance found to broadcast.");
   ioInstance.emit(event, data);
   console.log(`📢 Broadcasted "${event}" to all clients.`);
 };

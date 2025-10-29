@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import BattleConfig from "../../config/battles.json" with { type: "json" };
 import BattleModel from "../../models/Battles.js";
 import PackDrawModel from "../../models/Packdraw.js";
+import { calculateTotalAmount, deductAmount, getUserBalance } from "../../helpers/common.helper.js";
 class UserBattlesService {
   createBattle = async (userId, req_Body) => {
     try {
@@ -48,14 +49,24 @@ class UserBattlesService {
       const packsDet = await PackDrawModel.find({
               _id: { $in: packsIds.map((id) => new mongoose.Types.ObjectId(id)) },
             });
-            const battleAmount = await calculateTotalAmount(packsDet)
-      const data = await BattleModel.create({ ...req_Body, creatorId:userId,creatorType:"User",battleAmount });
-      return {
-        code: 200,
-        status: true,
-        message: "Battle Created Successfully",
-        data: data,
-      };
+            const battleAmount = await calculateTotalAmount(packsDet);
+            const userBalance = await getUserBalance(new mongoose.Types.ObjectId(userId));
+            if (userBalance.total_chip_amount >= battleAmount) {
+              await deductAmount(userId,battleAmount)
+              const data = await BattleModel.create({ ...req_Body, creatorId:userId,creatorType:"User",battleAmount });
+              return {
+                code: 200,
+                status: true,
+                message: "Battle Created Successfully",
+                data: data,
+              };
+            }else{
+              return {
+                status: 400,
+                status: false,
+                message: "Insufficient Fund",
+              }
+            };
     } catch (error) {
       console.error("createBattle error:", error);
       return {

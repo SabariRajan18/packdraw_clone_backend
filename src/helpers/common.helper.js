@@ -116,9 +116,7 @@ export const calculateTotalRewardAmount = (selectedRewards) => {
 
 export const getOrCreateUserSpends = async (packsIds) => {
   try {
-    console.log({ packsIds });
     const objectIds = packsIds.map((id) => new mongoose.Types.ObjectId(id));
-    console.log({ objectIds });
     const spends = await Promise.all(
       objectIds.map(async (packsId) => {
         const spend = await PacksSpendModel.findOneAndUpdate(
@@ -215,4 +213,27 @@ export const getOneRandomId = (arr) => {
   if (!arr || arr.length === 0) return null;
   const randomItem = arr[Math.floor(Math.random() * arr.length)];
   return randomItem?._id || null;
+};
+
+export const getBattlePlayerCount = (battleType, players) => {
+  if (!battleType || !players) return 0;
+  const soloCounts = {
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "6": 6,
+  };
+  const teamCounts = {
+    "2v2": 4,
+    "3v3": 6,
+    "2v2v2": 6,
+  };
+
+  if (battleType === "Solo") {
+    return soloCounts[players] || 0;
+  } else if (battleType === "Team") {
+    return teamCounts[players] || 0;
+  }
+
+  return 0;
 };

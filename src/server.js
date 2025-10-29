@@ -10,6 +10,7 @@ import http from "http";
 import { Server } from "socket.io";
 import { setControllerSocket } from "./helpers/socket.helper.js";
 import "./cron/battle.cron.js";
+import { joinBattle } from "./socket/battle.socket.js";
 
 dotenv.config();
 const app = express();
@@ -28,6 +29,23 @@ const io = new Server(server, {
 
 setControllerSocket(io);
 connectDB();
+
+io.on("connection", (socket) => {
+  console.log(`🔌 User connected: ${socket.id}`);
+
+  socket.on("join-battle", async (battleConfig) => {
+    await joinBattle(battleConfig);
+  });
+
+  socket.on("register", (userId) => {
+    if (!userId) return;
+    socket.join(userId.toString());
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User Disconnected!");
+  });
+});
 
 app.use(express.json());
 app.use(cookieParser());
