@@ -10,7 +10,7 @@ import http from "http";
 import { Server } from "socket.io";
 import { setControllerSocket } from "./helpers/socket.helper.js";
 import "./cron/battle.cron.js";
-import { joinBattle } from "./socket/battle.socket.js";
+import { joinBattle, moniterBattles } from "./socket/battle.socket.js";
 
 dotenv.config();
 const app = express();
@@ -40,6 +40,11 @@ io.on("connection", (socket) => {
   socket.on("register", (userId) => {
     if (!userId) return;
     socket.join(userId.toString());
+  });
+
+  socket.on("moniter-battle-room", async (battleId) => {
+    socket.join(battleId);
+    await moniterBattles(io, battleId);
   });
 
   socket.on("disconnect", () => {

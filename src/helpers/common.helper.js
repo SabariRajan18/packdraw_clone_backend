@@ -218,10 +218,10 @@ export const getOneRandomId = (arr) => {
 export const getBattlePlayerCount = (battleType, players) => {
   if (!battleType || !players) return 0;
   const soloCounts = {
-    "2": 2,
-    "3": 3,
-    "4": 4,
-    "6": 6,
+    2: 2,
+    3: 3,
+    4: 4,
+    6: 6,
   };
   const teamCounts = {
     "2v2": 4,

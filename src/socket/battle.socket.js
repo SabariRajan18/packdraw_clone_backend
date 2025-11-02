@@ -33,6 +33,12 @@ export const joinBattle = async (battleConfig) => {
               battleId,
               battleAmount: battleDet.battleAmount,
             });
+            if (playerCount >= totalBattleHis.length + 1) {
+              await BattleModel.updateOne(
+                { _id: battleId },
+                { $set: { status: "Playing" } }
+              );
+            }
             emitToUser(userId, "battle-join-res", {
               type: "success",
               msg: "Successfully Joined Battles",
@@ -76,5 +82,38 @@ export const joinBattle = async (battleConfig) => {
     }
   } catch (error) {
     console.error({ joinBattle: error });
+  }
+};
+
+export const moniterBattles = async (io, battleId) => {
+  try {
+    const battleData = await BattleModel.findOne({
+      _id: battleId,
+      status: "Playing",
+    });
+    if (!battleData) {
+      return "Waiting for Players";
+    }
+
+    if (battleData) {
+      const battleHis = await BattleHistoryModel.find({ battleId });
+      const teamCounts = getBattlePlayerCount(
+        battleData.battleType,
+        battleData.players
+      );
+
+      if (teamCounts <= battleHis.length) {
+        for (let idx = 0; idx < battleData.length; idx++) {
+          const element = battleData[idx];
+          
+        }
+        // start
+        io.to(battleId).emit("battle-moniter-res", "success");
+      } else {
+        // Not Start
+      }
+    }
+  } catch (error) {
+    console.error({ moniterBattles: error });
   }
 };

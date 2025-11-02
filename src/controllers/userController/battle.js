@@ -13,5 +13,13 @@ class UserBattleController {
       await errorResponse(req, res, error);
     }
   };
+  getBattleInfo = async (req, res) => {
+    try {
+      const response = await UserBattlesService.getBattleInfo(req.body);
+      await successResponse(req, res, response);
+    } catch (error) {
+      await errorResponse(req, res, error);
+    }
+  };
 }
 export default new UserBattleController();
