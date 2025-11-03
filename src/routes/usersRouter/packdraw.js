@@ -22,4 +22,5 @@ router.post(
   UserPackDrawController.createPacks
 );
 router.get("/getItems", UserPackDrawController.getItems);
+router.get("/get-packs-history",UserPackDrawController.getPacksHistory)
 export default router;

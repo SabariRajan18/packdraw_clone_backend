@@ -202,6 +202,7 @@ class UserPacksService {
   spinPacks = async (userId, req_Body) => {
     try {
       const { packsIds, itemIds } = req_Body;
+      console.log({ packsIds });
       const userDet = await UsersModel.findOne({ _id: userId });
       if (!userDet) {
         return {
@@ -248,6 +249,7 @@ class UserPacksService {
         const totalRewardAmount = await calculateTotalRewardAmount(
           actualRewardDet
         );
+        console.log({ totalRewardAmount }, { totalAmount });
         if (userBalance.total_chip_amount >= totalAmount) {
           const isDeducted = await deductAmount(userId, totalAmount);
           const isCredited = await creditAmount(userId, totalRewardAmount);
@@ -351,6 +353,7 @@ class UserPacksService {
         );
         return found ? [found] : [];
       });
+      console.log({ reFormattedData: reFormattedData.length });
       return {
         code: 200,
         status: true,
@@ -505,6 +508,108 @@ class UserPacksService {
         },
       };
     } catch (error) {
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+  getPacksHistory = async (req, req_Query) => {
+    try {
+      const { userId } = req;
+      const limit = parseInt(req_Query.limit) || 10;
+      const page = parseInt(req_Query.page) || 1;
+
+      const userHistory = await SpinHistoryModel.aggregate([
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(userId),
+          },
+        },
+        {
+          $addFields: {
+            packsArray: {
+              $cond: {
+                if: {
+                  $eq: [{ $type: "$packsId" }, "string"],
+                },
+                then: {
+                  $map: {
+                    input: {
+                      $filter: {
+                        input: {
+                          $split: [
+                            {
+                              $trim: {
+                                input: "$packsId",
+                                chars: '[]"',
+                              },
+                            },
+                            ",",
+                          ],
+                        },
+                        as: "val",
+                        cond: {
+                          $ne: [
+                            {
+                              $trim: {
+                                input: "$$val",
+                                chars: ' "',
+                              },
+                            },
+                            "",
+                          ],
+                        },
+                      },
+                    },
+                    as: "id",
+                    in: {
+                      $toObjectId: {
+                        $trim: {
+                          input: "$$id",
+                          chars: ' "',
+                        },
+                      },
+                    },
+                  },
+                },
+                else: {
+                  $cond: {
+                    if: {
+                      $eq: [{ $type: "$packsId" }, "objectId"],
+                    },
+                    then: ["$packsId"],
+                    else: "$packsId",
+                  },
+                },
+              },
+            },
+          },
+        },
+        {
+          $unwind: {
+            path: "$packsArray",
+          },
+        },
+        {
+          $lookup: {
+            from: "PackDraw",
+            localField: "packsArray",
+            foreignField: "_id",
+            as: "PacksDet",
+          },
+        },
+      ]);
+      return {
+        code: 200,
+        status: true,
+        message: "User Packs History",
+        data: userHistory || [],
+      };
+    } catch (error) {
+      console.error({ getPacksHistory: error });
       return {
         code: 500,
         status: false,
