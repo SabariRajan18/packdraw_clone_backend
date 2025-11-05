@@ -7,6 +7,7 @@ class UserBattlesService {
   createBattle = async (userId, req_Body) => {
     try {
       const { name, battleType, players, battleGameMode, packsIds } = req_Body;
+      console.log("req_Body:", players);
 
       if (!battleType) {
         return {
@@ -26,7 +27,8 @@ class UserBattlesService {
       if (!players) {
         return { status: 400, status: false, message: "players is required" };
       };
-      if (!selectedBattle.players.includes(players)) {
+      console.log("selectedBattle.players:", selectedBattle.players);
+      if (!selectedBattle.players.includes(players.toString())) {
         return { status: 400, status: false, message: "Invalid players" };
       };
       if (!battleGameMode) {
@@ -79,7 +81,7 @@ class UserBattlesService {
   };
   getBattleInfo = async (req_Body) => {
     try {
-      const { battleId } = req_Body;
+      const {    } = req_Body;
       if (!battleId || battleId == "") {
         return {
           status: 400,
@@ -155,6 +157,303 @@ class UserBattlesService {
       };
     }
   }
+  // Add these methods to your UserBattlesService class
+
+  getAllBattles = async (userId, filters = {}) => {
+    try {
+      const {
+        page = 1,
+        limit = 10,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        battleType,
+        status,
+        players,
+        search
+      } = filters;
+  
+      const skip = (page - 1) * limit;
+  
+      // Build match query
+      const matchQuery = {};
+      
+      if (battleType) {
+        matchQuery.battleType = battleType;
+      }
+      
+      if (status) {
+        matchQuery.status = status;
+      }
+      
+      if (players) {
+        matchQuery.players = players;
+      }
+  
+      if (search) {
+        matchQuery.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { battleGameMode: { $regex: search, $options: 'i' } }
+        ];
+      }
+  
+      const aggregationPipeline = [
+        { $match: matchQuery },
+        {
+          $lookup: {
+            from: "users",
+            localField: "creatorId",
+            foreignField: "_id",
+            as: "creatorInfo",
+          }
+        },
+        {
+          $unwind: {
+            path: "$creatorInfo",
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $lookup: {
+            from: "BattleHistory",
+            localField: "_id",
+            foreignField: "battleId",
+            as: "participants",
+          }
+        },
+        {
+          $lookup: {
+            from: "PackDraw",
+            localField: "packsIds",
+            foreignField: "_id",
+            as: "packsInfo",
+            pipeline: [
+              {
+                $lookup: {
+                  from: "PacksImages",
+                  localField: "wallpaper",
+                  foreignField: "_id",
+                  as: "wallpaperInfo"
+                }
+              },
+              {
+                $unwind: {
+                  path: "$wallpaperInfo",
+                  preserveNullAndEmptyArrays: true
+                }
+              }
+            ]
+          }
+        },
+        {
+          $addFields: {
+            participantsCount: { $size: "$participants" },
+            // FIXED: Safe conversion to number with error handling
+            playersNumber: {
+              $cond: {
+                if: { $regexMatch: { input: "$players", regex: /^[0-9]+$/ } },
+                then: { $toInt: "$players" },
+                else: 2 // Default value if conversion fails
+              }
+            }
+          }
+        },
+        {
+          $addFields: {
+            // Now use the safely converted number
+            slotsAvailable: {
+              $subtract: ["$playersNumber", "$participantsCount"]
+            },
+            totalPacks: { $size: "$packsIds" },
+            creatorName: "$creatorInfo.username",
+            isJoined: {
+              $in: [new mongoose.Types.ObjectId(userId), "$participants.userId"]
+            },
+            isCreator: {
+              $eq: ["$creatorId", new mongoose.Types.ObjectId(userId)]
+            }
+          }
+        },
+        {
+          $project: {
+            "creatorInfo.password": 0,
+            "creatorInfo.email": 0,
+            "participants.userId": 0,
+            "playersNumber": 0 // Remove temporary field if not needed
+          }
+        },
+        {
+          $sort: { [sortBy]: sortOrder === 'desc' ? -1 : 1 }
+        }
+      ];
+  
+      // Get total count for pagination
+      const countPipeline = [...aggregationPipeline.slice(0, -1)]; // Remove sort for count
+      countPipeline.push({ $count: "total" });
+      
+      const totalResult = await BattleModel.aggregate(countPipeline);
+      const total = totalResult.length > 0 ? totalResult[0].total : 0;
+  
+      // Get paginated data
+      aggregationPipeline.push(
+        { $skip: skip },
+        { $limit: parseInt(limit) }
+      );
+  
+      const battles = await BattleModel.aggregate(aggregationPipeline);
+  
+      return {
+        code: 200,
+        status: true,
+        message: "Battles fetched successfully",
+        data: {
+          battles,
+          pagination: {
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(total / limit),
+            totalBattles: total,
+            hasNext: page * limit < total,
+            hasPrev: page > 1
+          }
+        }
+      };
+  
+    } catch (error) {
+      console.error("getAllBattles error:", error);
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+
+getUserBattles = async (userId, filters = {}) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      type = 'all' // 'created', 'joined', 'all'
+    } = filters;
+
+    const skip = (page - 1) * limit;
+
+    let matchQuery = {};
+
+    if (type === 'created') {
+      matchQuery.creatorId = new mongoose.Types.ObjectId(userId);
+    } else if (type === 'joined') {
+      // This would need to check BattleHistory for participation
+      matchQuery = {
+        "participants.userId": new mongoose.Types.ObjectId(userId)
+      };
+    } else {
+      // All battles relevant to user (created or joined)
+      matchQuery = {
+        $or: [
+          { creatorId: new mongoose.Types.ObjectId(userId) },
+          { "participants.userId": new mongoose.Types.ObjectId(userId) }
+        ]
+      };
+    }
+
+    if (status) {
+      matchQuery.status = status;
+    }
+
+    const aggregationPipeline = [
+      {
+        $lookup: {
+          from: "BattleHistory",
+          localField: "_id",
+          foreignField: "battleId",
+          as: "participants"
+        }
+      },
+      { $match: matchQuery },
+      {
+        $lookup: {
+          from: "users",
+          localField: "creatorId",
+          foreignField: "_id",
+          as: "creatorInfo",
+        }
+      },
+      {
+        $unwind: {
+          path: "$creatorInfo",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "PackDraw",
+          localField: "packsIds",
+          foreignField: "_id",
+          as: "packsInfo",
+        }
+      },
+      {
+        $addFields: {
+          participantsCount: { $size: "$participants" },
+          slotsAvailable: {
+            $subtract: [
+              { $toInt: "$players" },
+              { $size: "$participants" }
+            ]
+          },
+          isCreator: {
+            $eq: ["$creatorId", new mongoose.Types.ObjectId(userId)]
+          },
+          isJoined: {
+            $in: [new mongoose.Types.ObjectId(userId), "$participants.userId"]
+          }
+        }
+      },
+      {
+        $sort: { createdAt: -1 }
+      }
+    ];
+
+    const total = await BattleModel.aggregate([
+      ...aggregationPipeline,
+      { $count: "total" }
+    ]);
+
+    aggregationPipeline.push(
+      { $skip: skip },
+      { $limit: parseInt(limit) }
+    );
+
+    const battles = await BattleModel.aggregate(aggregationPipeline);
+
+    return {
+      code: 200,
+      status: true,
+      message: "User battles fetched successfully",
+      data: {
+        battles,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(total.length > 0 ? total[0].total : 0 / limit),
+          totalBattles: total.length > 0 ? total[0].total : 0,
+          hasNext: page * limit < (total.length > 0 ? total[0].total : 0),
+          hasPrev: page > 1
+        }
+      }
+    };
+
+  } catch (error) {
+    console.error("getUserBattles error:", error);
+    return {
+      code: 500,
+      status: false,
+      message: "Internal Server Error",
+      data: null,
+    };
+  }
+}
 }
 
 export default new UserBattlesService();
