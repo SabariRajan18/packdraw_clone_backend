@@ -79,9 +79,9 @@ class UserBattlesService {
       };
     }
   };
-  getBattleInfo = async (req_Body) => {
+  getBattleInfo = async (req_Body,battleId) => {
     try {
-      const {    } = req_Body;
+      // const {    } = req_Body;
       if (!battleId || battleId == "") {
         return {
           status: 400,
