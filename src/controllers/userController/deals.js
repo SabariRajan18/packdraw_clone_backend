@@ -13,6 +13,15 @@ class AdminDealsController {
       await errorResponse(req, res, error);
     }
   };
+  dealSpin = async (req, res) => {
+    try {
+      const response = await UserDealsService.dealSpinService(req, req.body);
+      await successResponse(req, res, response);
+    } catch (error) {
+      console.error({ getAllItems: error });
+      await errorResponse(req, res, error);
+    }
+  };
 }
 
 export default new AdminDealsController();

@@ -1,5 +1,11 @@
 import PacksItems from "../../models/PacksItems.js";
-
+import DealsSpinHistoryModel from "../../models/DealsSpinHistory.js";
+import {
+  creditAmount,
+  deductAmount,
+  getUserBalance,
+} from "../../helpers/common.helper.js";
+import PacksItemModel from "../../models/PacksItems.js";
 class UserDealsService {
   getAllItems = async (reqQuery) => {
     try {
@@ -46,6 +52,47 @@ class UserDealsService {
       };
     } catch (error) {
       console.error("getAllItems error:", error);
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+  dealSpinService = async (request, req_Body) => {
+    try {
+      const { userId } = request;
+      const { rewardItemId, amount, outComePer } = req_Body;
+      const userBalance = await getUserBalance(userId);
+      if (userBalance.total_chip_amount >= amount) {
+        const rewardDet = await PacksItemModel.findOne({ _id: rewardItemId });
+        const isDeducted = await deductAmount(userId, amount);
+        const isCredited = await creditAmount(userId, rewardDet.amount);
+        const spinHistory = await DealsSpinHistoryModel.create({
+          userId,
+          rewardItemId,
+          amount,
+          outComePer,
+        });
+        if (isDeducted && isCredited) {
+          return {
+            code: 200,
+            status: true,
+            message: "Deal Spinned Successfully",
+            data: spinHistory,
+          };
+        }
+      } else {
+        return {
+          code: 403,
+          status: false,
+          message: "Insufficient Fund",
+          data: null,
+        };
+      }
+    } catch (error) {
+      console.error("dealSpinService error:", error);
       return {
         code: 500,
         status: false,

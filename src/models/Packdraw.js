@@ -5,7 +5,7 @@ const packdrawSchema = new Schema(
     name: { type: String, required: true },
     wallpaper: {
       type: mongoose.Schema.Types.ObjectId,
-      requires: true,
+      required: true,
       ref: "PacksImages",
     },
     packAmount: { type: Number, required: true },
