@@ -240,6 +240,17 @@ class UserBattlesService {
                   path: "$wallpaperInfo",
                   preserveNullAndEmptyArrays: true
                 }
+              },
+              {
+                $addFields: {
+                  // Add the wallpaper URL directly to the pack object
+                  wallpaperUrl: "$wallpaperInfo.wallpaper"
+                }
+              },
+              {
+                $project: {
+                  wallpaperInfo: 0 // Remove the nested wallpaperInfo object
+                }
               }
             ]
           }
@@ -247,19 +258,17 @@ class UserBattlesService {
         {
           $addFields: {
             participantsCount: { $size: "$participants" },
-            // FIXED: Safe conversion to number with error handling
             playersNumber: {
               $cond: {
                 if: { $regexMatch: { input: "$players", regex: /^[0-9]+$/ } },
                 then: { $toInt: "$players" },
-                else: 2 // Default value if conversion fails
+                else: 2
               }
             }
           }
         },
         {
           $addFields: {
-            // Now use the safely converted number
             slotsAvailable: {
               $subtract: ["$playersNumber", "$participantsCount"]
             },
@@ -278,7 +287,7 @@ class UserBattlesService {
             "creatorInfo.password": 0,
             "creatorInfo.email": 0,
             "participants.userId": 0,
-            "playersNumber": 0 // Remove temporary field if not needed
+            "playersNumber": 0
           }
         },
         {
@@ -287,7 +296,7 @@ class UserBattlesService {
       ];
   
       // Get total count for pagination
-      const countPipeline = [...aggregationPipeline.slice(0, -1)]; // Remove sort for count
+      const countPipeline = [...aggregationPipeline.slice(0, -1)];
       countPipeline.push({ $count: "total" });
       
       const totalResult = await BattleModel.aggregate(countPipeline);
