@@ -33,7 +33,7 @@ class UserDealsService {
         .sort(sortOption)
         .skip(skip)
         .limit(Number(limit));
-
+      
       const total = await PacksItems.countDocuments(where);
 
       return {
