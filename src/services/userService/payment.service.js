@@ -11,18 +11,18 @@ import {
   decrypt,
 } from "../../helpers/payment.helper.js";
 import transporter from "../../helpers/mail.helper.js";
-import {getIoInstance} from "../../helpers/socket.helper.js";
+import { getIoInstance } from "../../helpers/socket.helper.js";
 import NowPaymentsOrders from "../../models/PaymentOrder.js";
 import TempWithdrawalHistory from "../../models/tempWithdrawalRequest.model.js";
 import UserNotifications from "../../models/UserNotifications.js";
 import { depositmail, withdrawmail } from "../../EmailTemp/mailTemp.js";
 import User from "../../models/Users.js";
-export default new class PaymentService {
+export default new (class PaymentService {
   createPayment = async (req_Body, userPayload) => {
     try {
-      const { coin, amount } = req_Body;
+      const { coin, amount = 10, userId } = req_Body;
 
-      const user = await User.findOne({ _id: userPayload?._id });
+      const user = await User.findOne({ _id: userId });
       if (!user) {
         return {
           code: 400,
@@ -78,27 +78,28 @@ export default new class PaymentService {
 
       const finalamount = parseInt(amount);
       const payments = await NowPaymentsOrders.create({
-        userid: userPayload?._id,
+        userid: userId,
         useremail: user.email,
-        amount: finalamount,
+        amount: amount,
         deposite_date: new Date(),
         txnstatus: "pending",
         currency: crypto,
         coin: crypto,
       });
-
+      // console.log({ finalamount });
       const options = {
         method: "post",
-        url: "https://api.nowpayments.io/v1/payment",
+        url: "https://api-sandbox.nowpayments.io/v1/payment",
         headers: {
-          "x-api-key": "R58B880-3F54VJ4-NWV0GCS-KNRM7DV",
+          "x-api-key": "W039AXE-FGDMWFS-K0EW2XM-962KSQ7",
           "Content-Type": "application/json",
         },
         data: {
-          price_amount: finalamount,
+          price_amount: amount,
           price_currency: "usd",
           pay_currency: crypto,
-          ipn_callback_url: "https://api.koalabet.io/v1/paycallback",
+          ipn_callback_url:
+            "https://mrmto-staging-api.troniextechnologies.com/api/payment/paycallback",
           order_id: `${payments._id}`,
           order_description: `Koalabet ${coin} deposit`,
         },
@@ -114,11 +115,11 @@ export default new class PaymentService {
         data: { pay_address, pay_amount, pay_currency: coin },
       };
     } catch (error) {
-      console.error("createPayment error:", error);
+      console.error("createPayment error:", error.response);
       return {
         code: 500,
         status: false,
-        message: "Internal Server Error",
+        message: "Internal Server Error", 
         data: null,
       };
     }
@@ -129,21 +130,41 @@ export default new class PaymentService {
       const { amount, chain, walletaddress } = req_Body;
       const user = await User.findOne({ _id: userPayload._id });
       if (!user) {
-        return { code: 400, status: false, message: "User not found", data: null };
+        return {
+          code: 400,
+          status: false,
+          message: "User not found",
+          data: null,
+        };
       }
 
       const gameChips = await GameChip.findOne({ user_id: userPayload._id });
       if (!gameChips) {
-        return { code: 400, status: false, message: "No game balance found", data: null };
+        return {
+          code: 400,
+          status: false,
+          message: "No game balance found",
+          data: null,
+        };
       }
 
       if (isNaN(amount)) {
-        return { code: 400, status: false, message: "Invalid amount.", data: null };
+        return {
+          code: 400,
+          status: false,
+          message: "Invalid amount.",
+          data: null,
+        };
       }
 
       const PaymentConfig = await PaymentConfigs.findOne({});
       if (!PaymentConfig) {
-        return { code: 400, status: false, message: "Payment configuration not found.", data: null };
+        return {
+          code: 400,
+          status: false,
+          message: "Payment configuration not found.",
+          data: null,
+        };
       }
 
       const withdrawamount = parseFloat(amount).toFixed(2);
@@ -207,7 +228,12 @@ export default new class PaymentService {
       };
     } catch (error) {
       console.error("withdrawRequest error:", error);
-      return { code: 500, status: false, message: "Internal Server Error", data: null };
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
     }
   };
 
@@ -215,10 +241,17 @@ export default new class PaymentService {
     try {
       const { requestid, otp } = req_Body;
       const requestId = decrypt(requestid);
-      const tempTx = await TempWithdrawalHistory.findOne({ requestid: requestId });
+      const tempTx = await TempWithdrawalHistory.findOne({
+        requestid: requestId,
+      });
 
       if (!tempTx) {
-        return { code: 400, status: false, message: "Unauthorized request.", data: null };
+        return {
+          code: 400,
+          status: false,
+          message: "Unauthorized request.",
+          data: null,
+        };
       }
 
       if (tempTx.request_count > 3) {
@@ -246,7 +279,12 @@ export default new class PaymentService {
       if (tempTx.confirmation_otp !== otp) {
         tempTx.request_count += 1;
         await tempTx.save();
-        return { code: 400, status: false, message: "Invalid OTP.", data: null };
+        return {
+          code: 400,
+          status: false,
+          message: "Invalid OTP.",
+          data: null,
+        };
       }
 
       const finalamount = Math.max(0, useramount - requestedamount);
@@ -276,7 +314,12 @@ export default new class PaymentService {
       };
     } catch (error) {
       console.error("verifyOtpWithdraw error:", error);
-      return { code: 500, status: false, message: "Internal Server Error", data: null };
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
     }
   };
 
@@ -291,11 +334,15 @@ export default new class PaymentService {
       };
     } catch (error) {
       console.error("getPaymentConfig error:", error);
-      return { code: 500, status: false, message: "Internal Server Error", data: null };
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
     }
   };
 
- 
   payCallBack = async (req_Body) => {
     try {
       const {
@@ -311,12 +358,22 @@ export default new class PaymentService {
 
       const order = await NowPaymentsOrders.findOne({ _id: order_id });
       if (!order) {
-        return { code: 400, status: false, message: "Transaction not found", data: null };
+        return {
+          code: 400,
+          status: false,
+          message: "Transaction not found",
+          data: null,
+        };
       }
 
       const user = await UserNotifications.findById(order.userid);
       if (!user) {
-        return { code: 400, status: false, message: "User not found", data: null };
+        return {
+          code: 400,
+          status: false,
+          message: "User not found",
+          data: null,
+        };
       }
 
       const gamebalance = await GameChip.findOne({ user_id: order.userid });
@@ -325,10 +382,12 @@ export default new class PaymentService {
           ? await getEstimatedPrice(actually_paid, pay_currency, "usd")
           : price_amount;
 
-      const newBalance = parseFloat(gamebalance.total_chip_amount) + parseFloat(usdAmount);
+      const newBalance =
+        parseFloat(gamebalance.total_chip_amount) + parseFloat(usdAmount);
 
       if (["partially_paid", "finished"].includes(payment_status)) {
-        gamebalance.crypto_balances[pay_currency.toLowerCase()] += parseFloat(usdAmount);
+        gamebalance.crypto_balances[pay_currency.toLowerCase()] +=
+          parseFloat(usdAmount);
         gamebalance.total_chip_amount = parseFloat(newBalance.toFixed(2));
         await gamebalance.save();
 
@@ -353,7 +412,12 @@ export default new class PaymentService {
         });
 
         getIoInstance().emit("userNotification", { userid: order.userid });
-        return { code: 200, status: true, message: "Transaction successful!", data: null };
+        return {
+          code: 200,
+          status: true,
+          message: "Transaction successful!",
+          data: null,
+        };
       } else if (payment_status === "failed") {
         order.txnstatus = "failed";
         await order.save();
@@ -364,13 +428,21 @@ export default new class PaymentService {
           message: `Your deposit of ${pay_amount}${pay_currency} (${price_amount} USD) has failed.`,
         });
         getIoInstance().emit("userNotification", { userid: order.userid });
-        return { code: 400, status: false, message: "Transaction failed", data: null };
+        return {
+          code: 400,
+          status: false,
+          message: "Transaction failed",
+          data: null,
+        };
       }
     } catch (error) {
       console.error("payCallBack error:", error);
-      return { code: 500, status: false, message: "Internal Server Error", data: null };
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
     }
   };
-}
-
-
+})();
