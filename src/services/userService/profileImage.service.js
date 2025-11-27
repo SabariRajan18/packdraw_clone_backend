@@ -2,9 +2,16 @@
 import UsersModel from "../../models/Users.js";
 import { uploadImage } from "../../config/cloudinary.js";
 
-export default new class ProfileImageService {
+// history model
+
+import PacksSpinHistory from "../../models/SpinHistory.js";
+import DealsSpinHistory from "../../models/DealsSpinHistory.js";
+import DrawSpinHistory from "../../models/DrawSpinHistory.js";
+import mongoose from "mongoose";
+
+export default new (class ProfileImageService {
   uploadProfileImage = async (userId, file) => {
-    console.log('userId, file :>> ', userId, file);
+    console.log("userId, file :>> ", userId, file);
     try {
       if (!file) {
         return {
@@ -16,12 +23,18 @@ export default new class ProfileImageService {
       }
 
       // Validate file type
-      const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      const allowedMimeTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+      ];
       if (!allowedMimeTypes.includes(file.mimetype)) {
         return {
           code: 400,
           status: false,
-          message: "Invalid file type. Only JPEG, JPG, PNG, and WEBP are allowed.",
+          message:
+            "Invalid file type. Only JPEG, JPG, PNG, and WEBP are allowed.",
           data: null,
         };
       }
@@ -50,20 +63,20 @@ export default new class ProfileImageService {
 
       // Generate unique filename
       const filename = `profile_${userId}_${Date.now()}`;
-      
+
       // Upload image to Cloudinary
       const imageUrl = await uploadImage(file.buffer, filename);
 
       // Update user's profile image in database
       const updatedUser = await UsersModel.findByIdAndUpdate(
         userId,
-        { 
-          $set: { 
+        {
+          $set: {
             profileImage: imageUrl,
-            updatedAt: new Date()
-          } 
+            updatedAt: new Date(),
+          },
         },
-        { new: true, select: '-password' } // Return updated user without password
+        { new: true, select: "-password" } // Return updated user without password
       );
 
       return {
@@ -72,14 +85,14 @@ export default new class ProfileImageService {
         message: "Profile image uploaded successfully!",
         data: {
           profileImage: imageUrl,
-          user: updatedUser
+          user: updatedUser,
         },
       };
     } catch (error) {
       console.error("Profile Image Upload Error:", error);
-      
+
       // Handle Cloudinary specific errors
-      if (error.message.includes('File size too large')) {
+      if (error.message.includes("File size too large")) {
         return {
           code: 400,
           status: false,
@@ -87,8 +100,8 @@ export default new class ProfileImageService {
           data: null,
         };
       }
-      
-      if (error.message.includes('Invalid image file')) {
+
+      if (error.message.includes("Invalid image file")) {
         return {
           code: 400,
           status: false,
@@ -131,11 +144,11 @@ export default new class ProfileImageService {
       // Update user to remove profile image
       const updatedUser = await UsersModel.findByIdAndUpdate(
         userId,
-        { 
+        {
           $unset: { profileImage: 1 },
-          $set: { updatedAt: new Date() }
+          $set: { updatedAt: new Date() },
         },
-        { new: true, select: '-password' }
+        { new: true, select: "-password" }
       );
 
       return {
@@ -143,7 +156,7 @@ export default new class ProfileImageService {
         status: true,
         message: "Profile image removed successfully!",
         data: {
-          user: updatedUser
+          user: updatedUser,
         },
       };
     } catch (error) {
@@ -160,7 +173,7 @@ export default new class ProfileImageService {
   // Optional: Get user profile with image
   getUserProfile = async (userId) => {
     try {
-      const user = await UsersModel.findById(userId).select('-password');
+      const user = await UsersModel.findById(userId).select("-password");
       if (!user) {
         return {
           code: 404,
@@ -186,4 +199,73 @@ export default new class ProfileImageService {
       };
     }
   };
-}();
+
+  getCartDatas = async (userId, req_Body, req_Query) => {
+    try {
+      const { type } = req_Body;
+      const { page = 1, limit = 50 } = req_Query;
+      const models = {
+        packs: PacksSpinHistory,
+        battles: PacksSpinHistory,
+        deals: DealsSpinHistory,
+        draws: DrawSpinHistory,
+      };
+
+      const historyModel = models[type];
+      if (!historyModel) {
+        return {
+          code: 400,
+          status: false,
+          message: "Invalid type",
+          data: null,
+        };
+      }
+      const skip = (page - 1) * limit;
+      const data = await historyModel.aggregate([
+        { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+        {
+          $lookup: {
+            from: "Users",
+            localField: "userId",
+            foreignField: "_id",
+            as: "userData",
+          },
+        },
+        {
+          $addFields: {
+            type: type,
+          },
+        },
+        { $unwind: "$userData" },
+
+        { $skip: skip },
+        { $limit: parseInt(limit) },
+
+        { $sort: { createdAt: -1 } },
+      ]);
+
+      const total = await historyModel.countDocuments({ userId });
+
+      return {
+        code: 200,
+        status: true,
+        message: "History Fetched Successfully!",
+        data,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      console.error("Get CartDatas Error:", error);
+      return {
+        code: 500,
+        status: false,
+        message: "Internal Server Error",
+        data: null,
+      };
+    }
+  };
+})();

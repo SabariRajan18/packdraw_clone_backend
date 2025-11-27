@@ -33,7 +33,7 @@ class UserDealsService {
         .sort(sortOption)
         .skip(skip)
         .limit(Number(limit));
-      
+
       const total = await PacksItems.countDocuments(where);
 
       return {
@@ -68,14 +68,14 @@ class UserDealsService {
       if (userBalance.total_chip_amount >= amount) {
         const rewardDet = await PacksItemModel.findOne({ _id: rewardItemId });
         const isDeducted = await deductAmount(userId, amount);
-        const isCredited = await creditAmount(userId, rewardDet.amount);
+        // const isCredited = await creditAmount(userId, rewardDet.amount);
         const spinHistory = await DealsSpinHistoryModel.create({
           userId,
           rewardItemId,
           amount,
           outComePer,
         });
-        if (isDeducted && isCredited) {
+        if (isDeducted) {
           return {
             code: 200,
             status: true,

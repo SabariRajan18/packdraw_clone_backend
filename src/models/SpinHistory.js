@@ -8,7 +8,7 @@ const SpinHistorySchema = new Schema(
       required: true,
     },
     packsId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "PackDraw",
       required: true,
     },
@@ -17,13 +17,17 @@ const SpinHistorySchema = new Schema(
       required: true,
     },
     rewardItemId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "PacksItems",
       required: true,
     },
     rewardAmount: {
       type: Number,
       required: true,
+    },
+    isClaimed: {
+      type: Boolean,
+      default: false,
     },
   },
   { collection: "SpinHistory", timestamps: true }

@@ -18,6 +18,10 @@ const DealsSpinHistorySchema = new Schema(
       type: Number,
       required: true,
     },
+    isClaimed: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true, collection: "DealsSpinHistory" }
 );

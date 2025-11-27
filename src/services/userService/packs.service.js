@@ -252,19 +252,33 @@ class UserPacksService {
         console.log({ totalRewardAmount }, { totalAmount });
         if (userBalance.total_chip_amount >= totalAmount) {
           const isDeducted = await deductAmount(userId, totalAmount);
-          const isCredited = await creditAmount(userId, totalRewardAmount);
-          const spinHistory = await SpinHistoryModel.create({
-            userId: userId,
-            packsId: JSON.stringify(
-              actualPacksDet.map((item) => item._id.toString())
-            ),
-            spinAmount: totalAmount,
-            rewardItemId: JSON.stringify(
-              actualRewardDet.map((item) => item._id.toString())
-            ),
-            rewardAmount: totalRewardAmount,
-          });
-          if (isDeducted && isCredited) {
+          // const isCredited = await creditAmount(userId, totalRewardAmount);
+
+          let array = [];
+          for (let idx = 0; idx < actualPacksDet.length; idx++) {
+            const element = actualPacksDet[idx];
+            array.push({
+              userId: userId,
+              packsId: element._id,
+              spinAmount: element.packAmount,
+              rewardItemId: actualRewardDet[idx]._id,
+              rewardAmount: actualRewardDet[idx].amount,
+            });
+          }
+
+          // const spinHistory = await SpinHistoryModel.create({
+          //   userId: userId,
+          //   packsId: JSON.stringify(
+          //     actualPacksDet.map((item) => item._id.toString())
+          //   ),
+          //   spinAmount: totalAmount,
+          //   rewardItemId: JSON.stringify(
+          //     actualRewardDet.map((item) => item._id.toString())
+          //   ),
+          //   rewardAmount: totalRewardAmount,
+          // });
+          const spinHistory = await SpinHistoryModel.insertMany(array);
+          if (isDeducted) {
             return {
               code: 200,
               status: true,

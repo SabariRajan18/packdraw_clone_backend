@@ -35,6 +35,11 @@ router.get(
   profileImageController.getUserProfile
 );
 
+router.post(
+  "/get-cart-datas",
+  userTokenAuthuser,
+  profileImageController.getCartDatas
+);
 // Battles
 
 router.get("/get-battle-configs", CommonBattleController.getBattleConfigs);
