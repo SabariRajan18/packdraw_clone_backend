@@ -237,3 +237,33 @@ export const getBattlePlayerCount = (battleType, players) => {
 
   return 0;
 };
+
+export function WithoutRounding(value, decimals = 2) {
+  let str = String(value);
+
+  // If scientific notation, convert safely
+  if (str.includes("e") || str.includes("E")) {
+    const num = Number(value);
+    str = num.toLocaleString("fullwide", { useGrouping: false });
+  }
+
+  // Split integer + decimal
+  let [intPart, decPart = ""] = str.split(".");
+
+  // Cut the decimals (no rounding)
+  decPart = decPart.slice(0, decimals).padEnd(decimals, "0");
+
+  return decimals > 0 ? `${intPart}.${decPart}` : intPart;
+}
+
+export const randomBetween = (min, max) => {
+  return Number(Math.floor(Math.random() * (max - min + 1)) + min);
+};
+
+export function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
