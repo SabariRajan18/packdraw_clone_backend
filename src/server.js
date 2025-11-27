@@ -1,66 +1,68 @@
-import express from "express";
-import routers from "./routes/index.js";
-import path from "path";
-import cookieParser from "cookie-parser";
-import cors from "cors";
-import { fileURLToPath } from "url";
-import { connectDB } from "./config/db.js";
-import dotenv from "dotenv";
-import http from "http";
-import { Server } from "socket.io";
-import { setControllerSocket } from "./helpers/socket.helper.js";
-import "./cron/battle.cron.js";
-import { joinBattle, moniterBattles } from "./socket/battle.socket.js";
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 
+// Config
 dotenv.config();
+
+// Import routes
+import routes from './routes/index.js';
+
+// Import socket handlers
+import BattleHandler from './socket/battleHandler.js';
+
 const app = express();
-const { PORT } = process.env;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const server = http.createServer(app);
+
+// Socket.io setup
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     methods: ["GET", "POST"],
+    credentials: true
   },
+  transports: ['websocket', 'polling']
 });
 
-setControllerSocket(io);
-connectDB();
-
-io.on("connection", (socket) => {
-  console.log(`🔌 User connected: ${socket.id}`);
-
-  socket.on("join-battle", async (battleConfig) => {
-    await joinBattle(battleConfig);
-  });
-
-  socket.on("register", (userId) => {
-    if (!userId) return;
-    socket.join(userId.toString());
-  });
-
-  socket.on("moniter-battle-room", async (battleId) => {
-    socket.join(battleId);
-    await moniterBattles(io, battleId);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("User Disconnected!");
-  });
-});
-
-app.use(express.json());
-app.use(cookieParser());
+// Middleware
 app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "ejs");
+// Routes
+app.use('/api', routes);
 
-app.use("/api", routers);
+// Socket connection handling
+io.on('connection', (socket) => {
+  console.log('🟢 User connected:', socket.id);
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server & Socket running at http://localhost:${PORT}`);
+  // Register user with socket
+  socket.on('register', (userId) => {
+    socket.userId = userId;
+    console.log(`🟡 User ${userId} registered with socket ${socket.id}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('🔴 User disconnected:', socket.id);
+  });
 });
+
+// Initialize battle handler
+const battleHandler = new BattleHandler(io);
+battleHandler.initialize();
+
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/packdraw')
+  .then(() => console.log('🟢 MongoDB connected'))
+  .catch(err => console.error('🔴 MongoDB connection error:', err));
+
+// Start server
+const PORT = process.env.PORT || 4000;
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
+
+export { io };
