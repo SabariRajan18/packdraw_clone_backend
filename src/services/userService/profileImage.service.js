@@ -203,12 +203,25 @@ export default new (class ProfileImageService {
   getCartDatas = async (userId, req_Body, req_Query) => {
     try {
       const { type } = req_Body;
-      const { page = 1, limit = 50 } = req_Query;
+      const { page = 1, limit = 1 } = req_Query;
+
       const models = {
         packs: PacksSpinHistory,
         battles: PacksSpinHistory,
         deals: DealsSpinHistory,
         draws: DrawSpinHistory,
+      };
+
+      const lookupCollections = {
+        packs: "PacksItems",
+        deals: "PacksItems",
+        draws: "DrawProducts",
+      };
+
+      const rewardLookupField = {
+        packs: "rewardItemId",
+        deals: "rewardItemId",
+        draws: "drawProductId",
       };
 
       const historyModel = models[type];
@@ -220,9 +233,24 @@ export default new (class ProfileImageService {
           data: null,
         };
       }
+
       const skip = (page - 1) * limit;
-      const data = await historyModel.aggregate([
-        { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+      const pipeline = [
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(userId),
+          },
+        },
+        {
+          $lookup: {
+            from: lookupCollections[type],
+            localField: rewardLookupField[type],
+            foreignField: "_id",
+            as: "rewardDet",
+          },
+        },
+        { $unwind: "$rewardDet" },
+
         {
           $lookup: {
             from: "Users",
@@ -231,31 +259,38 @@ export default new (class ProfileImageService {
             as: "userData",
           },
         },
+        { $unwind: "$userData" },
+
         {
           $addFields: {
             type: type,
           },
         },
-        { $unwind: "$userData" },
-
-        { $skip: skip },
-        { $limit: parseInt(limit) },
 
         { $sort: { createdAt: -1 } },
-      ]);
+        { $skip: skip },
+        { $limit: parseInt(limit) },
+      ];
 
-      const total = await historyModel.countDocuments({ userId });
+      const data = await historyModel.aggregate(pipeline);
+
+      const total = await historyModel.countDocuments({
+        userId: new mongoose.Types.ObjectId(userId),
+      });
+      console.log({ total });
 
       return {
         code: 200,
         status: true,
         message: "History Fetched Successfully!",
-        data,
-        pagination: {
-          total,
-          page: parseInt(page),
-          limit: parseInt(limit),
-          totalPages: Math.ceil(total / limit),
+        data: {
+          data: data,
+          pagination: {
+            total,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalPages: Math.ceil(total / limit),
+          },
         },
       };
     } catch (error) {
