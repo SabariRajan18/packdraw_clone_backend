@@ -20,5 +20,6 @@ const packdrawSchema = new Schema(
   { timestamps: true, collection: "PackDraw" }
 );
 
-const PackDrawModel = mongoose.model("PackDraw", packdrawSchema);
-export default PackDrawModel;
+
+export default mongoose.models.PackDraw ||
+  mongoose.model("PackDraw", packdrawSchema);
