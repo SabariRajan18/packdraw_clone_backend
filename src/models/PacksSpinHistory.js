@@ -16,6 +16,10 @@ const SpinHistorySchema = new Schema(
       type: Number,
       required: true,
     },
+    type: {
+      type: String,
+      default: "",
+    },
     rewardItemId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "PacksItems",
@@ -30,8 +34,8 @@ const SpinHistorySchema = new Schema(
       default: false,
     },
   },
-  { collection: "SpinHistory", timestamps: true }
+  { collection: "PacksSpinHistory", timestamps: true }
 );
 
-const SpinHistoryModel = mongoose.model("SpinHistory", SpinHistorySchema);
+const SpinHistoryModel = mongoose.model("PacksSpinHistory", SpinHistorySchema);
 export default SpinHistoryModel;

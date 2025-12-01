@@ -6,6 +6,7 @@ import userBattleRouters from "./usersRouter/battle.js";
 import userDealsRouters from "./usersRouter/deals.js";
 import userAuthRouters from "./usersRouter/auth.js";
 import userDrawRouters from "./usersRouter/draw.js";
+import cartApi from "./usersRouter/cart.js";
 // ADMIN
 import adminBackdrawRouters from "./adminRouter/packdraw.js";
 import adminBattleRouters from "./adminRouter/battle.js";
@@ -22,6 +23,7 @@ router.use("/v1/users/packdraw", userBackdrawRouters);
 router.use("/v1/users/battles", userBattleRouters);
 router.use("/v1/users/deals", userDealsRouters);
 router.use("/v1/users/draw", userDrawRouters);
+router.use("/v1/users/cart", cartApi);
 
 // ADMIN ROUTERS
 router.use("/v2/admin/packdraw", adminBackdrawRouters);

@@ -14,9 +14,13 @@ const DrawSpinHistorySchema = new Schema(
       required: true,
       index: true,
     },
-    amount: {
+    rewardAmount: {
       type: Number,
       required: true,
+    },
+    type: {
+      type: String,
+      default: "",
     },
     isClaimed: {
       type: Boolean,

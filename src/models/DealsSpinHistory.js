@@ -14,6 +14,14 @@ const DealsSpinHistorySchema = new Schema(
       type: Number,
       required: true,
     },
+    type: {
+      type: String,
+      default: "",
+    },
+    rewardAmount: {
+      type: Number,
+      required: true,
+    },
     outComePer: {
       type: Number,
       required: true,

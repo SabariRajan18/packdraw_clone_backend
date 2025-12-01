@@ -14,7 +14,7 @@ import {
   rewardScript,
 } from "../../helpers/common.helper.js";
 import { uploadImage } from "../../config/cloudinary.js";
-import SpinHistoryModel from "../../models/SpinHistory.js";
+import SpinHistoryModel from "../../models/PacksSpinHistory.js";
 import PacksItemsModel from "../../models/PacksItems.js";
 class UserPacksService {
   getRewardIds = async (userId, req_Body) => {

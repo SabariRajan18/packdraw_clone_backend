@@ -267,3 +267,12 @@ export function shuffleArray(arr) {
   }
   return arr;
 }
+
+export const groupedData = (productDets) => {
+  const groupedIds = productDets.reduce((acc, item) => {
+    if (!acc[item.type]) acc[item.type] = [];
+    acc[item.type].push(item._id);
+    return acc;
+  }, {});
+  return groupedIds;
+};

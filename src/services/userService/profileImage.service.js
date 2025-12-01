@@ -4,14 +4,13 @@ import { uploadImage } from "../../config/cloudinary.js";
 
 // history model
 
-import PacksSpinHistory from "../../models/SpinHistory.js";
+import PacksSpinHistory from "../../models/PacksSpinHistory.js";
 import DealsSpinHistory from "../../models/DealsSpinHistory.js";
 import DrawSpinHistory from "../../models/DrawSpinHistory.js";
 import mongoose from "mongoose";
 
 export default new (class ProfileImageService {
   uploadProfileImage = async (userId, file) => {
-    console.log("userId, file :>> ", userId, file);
     try {
       if (!file) {
         return {
@@ -239,6 +238,7 @@ export default new (class ProfileImageService {
         {
           $match: {
             userId: new mongoose.Types.ObjectId(userId),
+            isClaimed: false,
           },
         },
         {

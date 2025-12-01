@@ -174,7 +174,7 @@ class UserDrawsService {
       const insertData = req_Body.map((item) => ({
         userId: userId,
         drawProductId: item._id,
-        amount: item.price,
+        rewardAmount: item.price,
       }));
       const data = await DrawSpinHistoryModel.insertMany(insertData);
       return {

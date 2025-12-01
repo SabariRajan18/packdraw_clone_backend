@@ -74,6 +74,7 @@ class UserDealsService {
           rewardItemId,
           amount,
           outComePer,
+          rewardAmount: rewardDet.amount,
         });
         if (isDeducted) {
           return {
