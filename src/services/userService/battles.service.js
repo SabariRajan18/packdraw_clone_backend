@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
 import BattleConfig from "../../config/battles.json" with { type: "json" };
-import BattleModel from "../../models/Battles.js";
-import PackDrawModel from "../../models/Packdraw.js";
 import { calculateTotalAmount, deductAmount, getUserBalance } from "../../helpers/common.helper.js";
 class UserBattlesService {
   createBattle = async (userId, req_Body) => {
