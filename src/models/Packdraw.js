@@ -9,7 +9,7 @@ const packdrawSchema = new Schema(
       ref: "PacksImages",
     },
     packAmount: { type: Number, required: true },
-    creator: { type: String, default: "Admin", index: true }, //Admin or User
+    creator: { type: String, default: "Admin", index: true },
     creatorId: { type: mongoose.Schema.Types.ObjectId, default: null },
     outCome: { type: Number, default: 0.00001 },
     items: [{ type: mongoose.Schema.Types.ObjectId, ref: "PacksItems" }],

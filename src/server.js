@@ -12,49 +12,29 @@ import { setControllerSocket } from "./helpers/socket.helper.js";
 import "./cron/battle.cron.js";
 import { joinBattle, moniterBattles } from "./socket/battle.socket.js";
 import DrawProductsModel from "./models/DrawProducts.js";
-import battleRoutes  from './routes/battleroutes.js'
+import battleRoutes from "./routes/battleroutes.js";
 import socketService from "./services/socketService.js";
-
 dotenv.config();
 const app = express();
-const { PORT } = process.env;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const server = http.createServer(app);
+
+// Socket.io setup
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     methods: ["GET", "POST"],
+    credentials: true,
   },
+  transports: ["websocket", "polling"],
 });
 new socketService(io);
 setControllerSocket(io);
 connectDB();
 
-io.on("connection", (socket) => {
-  console.log(`🔌 User connected: ${socket.id}`);
+// Routes
 
-  socket.on("join-battle", async (battleConfig) => {
-    console.log({battleConfig});
-    
-    await joinBattle(battleConfig);
-  });
-
-  socket.on("register", (userId) => {
-    if (!userId) return;
-    socket.join(userId.toString());
-  });
-
-  socket.on("moniter-battle-room", async (battleId) => {
-    socket.join(battleId);
-    await moniterBattles(io, battleId);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("User Disconnected!");
-  });
+socket.on("disconnect", () => {
+  console.log("🔴 User disconnected:", socket.id);
 });
 
 app.use(express.json());
@@ -64,14 +44,11 @@ app.use(cors());
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
-
 app.use("/api", routers);
-app.use('/api/battles', battleRoutes);
-
+app.use("/api/battles", battleRoutes);
 
 server.listen(PORT, () => {
-  console.log(`🚀 Server & Socket running at http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
-
 
 export { app, server };
