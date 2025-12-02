@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 const battlePlayerSchema = new Schema({
-  userId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+  userId: { type: Schema.Types.ObjectId, ref: 'Users', default: null },
   isBot: { type: Boolean, default: false },
   username: { type: String, required: true },
   socketId: { type: String },
@@ -27,7 +27,7 @@ const battlePlayerSchema = new Schema({
 const battleSchema = new Schema({
   creatorId: {
     type: Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'Users',
     default: null
   },
   creatorType: {
@@ -100,7 +100,7 @@ const battleSchema = new Schema({
   },
   players: [battlePlayerSchema],
   winnerPlayerIndex: { type: Number, default: null },
-  winnerUserId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+  winnerUserId: { type: Schema.Types.ObjectId, ref: 'Users', default: null },
   winnerPrize: { type: Number, default: 0 },
   finishedAt: { type: Date, default: null },
   isPrivate: { type: Boolean, default: false },

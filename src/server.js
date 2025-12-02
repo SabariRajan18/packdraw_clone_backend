@@ -29,7 +29,7 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
-
+new socketService(io);
 setControllerSocket(io);
 connectDB();
 
@@ -37,6 +37,8 @@ io.on("connection", (socket) => {
   console.log(`🔌 User connected: ${socket.id}`);
 
   socket.on("join-battle", async (battleConfig) => {
+    console.log({battleConfig});
+    
     await joinBattle(battleConfig);
   });
 
@@ -70,6 +72,6 @@ app.use('/api/battles', battleRoutes);
 server.listen(PORT, () => {
   console.log(`🚀 Server & Socket running at http://localhost:${PORT}`);
 });
- new socketService(server);
+
 
 export { app, server };

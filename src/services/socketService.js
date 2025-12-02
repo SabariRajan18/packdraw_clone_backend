@@ -1,53 +1,79 @@
 // services/socketService.js
-import  { Server } from "socket.io"
+import { Server } from "socket.io";
+import BattleService from "./BattleService.js";
+import jwt from 'jsonwebtoken';
 
 class SocketService {
   constructor(server) {
-    this.io = new Server(server, {
-      cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
-        methods: ["GET", "POST"],
-        credentials: true
-      }
-    });
+    this.io = server
 
-    this.userSocketMap = new Map();
-    this.battleSocketMap = new Map();
+    this.userSocketMap = new Map(); // userId -> socketId
+    this.socketUserMap = new Map(); // socketId -> userId
+    this.battleSocketMap = new Map(); // socketId -> battleId
     
     this.initializeSocketHandlers();
   }
 
   initializeSocketHandlers() {
-    this.io.on('connection', (socket) => {
-      console.log('New socket connection:', socket.id);
-
-      // User authentication
-      socket.on('authenticate', (data) => {
-        const { userId } = data;
-        if (userId) {
-          this.userSocketMap.set(userId, socket.id);
-          socket.userId = userId;
-          console.log(`User ${userId} connected with socket ${socket.id}`);
+    this.io.use(async (socket, next) => {
+      try {
+        const token = socket.handshake.auth.token;
+        if (!token) {
+          return next(new Error('Authentication error'));
         }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        socket.userId = decoded.userId;
+        socket.username = decoded.username;
+        next();
+      } catch (error) {
+        console.error('Socket authentication error:', error);
+        next(new Error('Authentication error'));
+      }
+    });
+
+    this.io.on('connection', (socket) => {
+      console.log('New socket connection:', socket.id, 'User:', socket.userId);
+
+      // Store user-socket mapping
+      if (socket.userId) {
+        this.userSocketMap.set(socket.userId, socket.id);
+        this.socketUserMap.set(socket.id, socket.userId);
+      }
+
+      // Authenticate
+      socket.on('authenticate', (data) => {
+        console.log('User authenticated:', socket.userId);
       });
 
-      // Battle lobby events
+      // Join battle lobby
       socket.on('joinBattleLobby', async (data) => {
         const { battleId } = data;
         socket.join(`battle:${battleId}`);
         this.battleSocketMap.set(socket.id, battleId);
         
+        console.log(`Socket ${socket.id} joined battle ${battleId}`);
+        
         // Notify others in battle
         socket.to(`battle:${battleId}`).emit('playerJoined', {
           socketId: socket.id,
+          userId: socket.userId,
+          username: socket.username,
           timestamp: new Date()
         });
       });
 
+      // Leave battle lobby
       socket.on('leaveBattleLobby', (data) => {
         const { battleId } = data;
         socket.leave(`battle:${battleId}`);
         this.battleSocketMap.delete(socket.id);
+        
+        socket.to(`battle:${battleId}`).emit('playerLeft', {
+          socketId: socket.id,
+          userId: socket.userId,
+          timestamp: new Date()
+        });
       });
 
       // Player ready status
@@ -56,10 +82,11 @@ class SocketService {
         
         this.io.to(`battle:${battleId}`).emit('playerReadyUpdate', {
           playerIndex,
+          userId: socket.userId,
+          username: socket.username,
           isReady: true
         });
 
-        // Check if all players are ready
         await this.checkAllPlayersReady(battleId);
       });
 
@@ -69,6 +96,7 @@ class SocketService {
         try {
           const battle = await BattleService.startBattle(battleId);
           
+          // Notify all players in battle
           this.io.to(`battle:${battleId}`).emit('battleStarted', {
             battle,
             countdown: 3
@@ -105,6 +133,7 @@ class SocketService {
           this.io.to(`battle:${battleId}`).emit('roundPlayed', {
             roundResults: result.roundResults,
             battle: result.battle,
+            currentRound: result.battle.currentRound,
             isComplete: result.isComplete
           });
 
@@ -113,7 +142,8 @@ class SocketService {
             this.io.to(`battle:${battleId}`).emit('battleComplete', {
               battle: result.battle,
               winnerIndex: result.battle.winnerPlayerIndex,
-              winnerPrize: result.battle.winnerPrize
+              winnerPrize: result.battle.winnerPrize,
+              winnerUserId: result.battle.winnerUserId
             });
           }
         } catch (error) {
@@ -125,16 +155,18 @@ class SocketService {
       socket.on('disconnect', () => {
         console.log('Socket disconnected:', socket.id);
         
-        // Remove from user socket map
-        if (socket.userId) {
-          this.userSocketMap.delete(socket.userId);
+        const userId = this.socketUserMap.get(socket.id);
+        if (userId) {
+          this.userSocketMap.delete(userId);
+          this.socketUserMap.delete(socket.id);
         }
         
-        // Remove from battle socket map
         const battleId = this.battleSocketMap.get(socket.id);
         if (battleId) {
           this.io.to(`battle:${battleId}`).emit('playerDisconnected', {
-            socketId: socket.id
+            socketId: socket.id,
+            userId: userId,
+            timestamp: new Date()
           });
           this.battleSocketMap.delete(socket.id);
         }
@@ -144,7 +176,7 @@ class SocketService {
 
   async checkAllPlayersReady(battleId) {
     // Implement logic to check if all players are ready
-    // This would involve checking a ready status in the battle document
+    // You can store ready status in battle document or in-memory
   }
 
   startBattleCountdown(battleId) {
@@ -177,9 +209,24 @@ class SocketService {
     this.io.to(`battle:${battleId}`).emit(event, data);
   }
 
+  // Broadcast battle creation to all users
+  broadcastBattleCreated(battle) {
+    this.io.emit('battleCreated', battle);
+  }
+
+  // Broadcast battle update
+  broadcastBattleUpdated(battle) {
+    this.io.emit('battleUpdated', battle);
+  }
+
+  // Broadcast battle started (remove from waiting list)
+  broadcastBattleStarted(battleId) {
+    this.io.emit('battleStarted', { battleId });
+  }
+
   getIO() {
     return this.io;
   }
 }
 
-export default  SocketService;
+export default SocketService;

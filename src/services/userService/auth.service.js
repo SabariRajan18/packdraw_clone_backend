@@ -11,6 +11,7 @@ import {
   getUserBalance,
 } from "../../helpers/common.helper.js";
 import sendMailer from "../../helpers/mail.helper.js";
+import GameChip from "../../models/GameChip.js";
 class UserAuthService {
   register = async (req_Body) => {
     try {
@@ -577,6 +578,8 @@ class UserAuthService {
   getUser = async (userId) => {
     try {
       const user = await UsersModel.findOne({ _id: userId }).lean();
+      let balance;
+      const gamechip = await GameChip.findOne({})
       const authConfig = await generate2FASecret(user.email);
 
       let userData = user;
