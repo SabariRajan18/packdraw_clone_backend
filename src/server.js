@@ -15,6 +15,7 @@ import DrawProductsModel from "./models/DrawProducts.js";
 import battleRoutes from "./routes/battleroutes.js";
 import socketService from "./services/socketService.js";
 dotenv.config();
+const PORT = process.env.PORT;
 const app = express();
 const server = http.createServer(app);
 
@@ -31,18 +32,9 @@ new socketService(io);
 setControllerSocket(io);
 connectDB();
 
-// Routes
-
-socket.on("disconnect", () => {
-  console.log("🔴 User disconnected:", socket.id);
-});
-
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors());
-
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "ejs");
 
 app.use("/api", routers);
 app.use("/api/battles", battleRoutes);
