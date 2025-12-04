@@ -6,6 +6,7 @@ import JWT from "jsonwebtoken";
 import GameChip from "../models/GameChip.js";
 import PacksItemModel from "../models/PacksItems.js";
 import PacksSpendModel from "../models/UserPacksSpend.js";
+import UserLevelAndExp from "../config/exp.json" with { type : "json" }
 dotenv.config();
 
 const { JWT_SECRET, ENC_DEC_SECRET, SITE_NAME } = process.env;
@@ -275,4 +276,17 @@ export const groupedData = (productDets) => {
     return acc;
   }, {});
   return groupedIds;
+};
+
+export const addExperience = (user, amount) => {
+  const gainedExp = amount * UserLevelAndExp.expPerDollar;
+  user.exp += gainedExp;
+  const levelsGained = Math.floor(user.exp / UserLevelAndExp.expPerLevel);
+
+  if (levelsGained > 0) {
+    user.level += levelsGained;
+    user.exp -= levelsGained * UserLevelAndExp.expPerLevel;
+  }
+  user.save();
+  return user;
 };

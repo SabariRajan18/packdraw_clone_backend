@@ -1,6 +1,7 @@
 import PacksItems from "../../models/PacksItems.js";
 import DealsSpinHistoryModel from "../../models/DealsSpinHistory.js";
 import {
+  addExperience,
   creditAmount,
   deductAmount,
   getUserBalance,
@@ -64,11 +65,21 @@ class UserDealsService {
     try {
       const { userId } = request;
       const { rewardItemId, amount, outComePer } = req_Body;
+      const userDet = await UsersModel.findOne({ _id: userId });
+      if (!userDet) {
+        return {
+          code: 403,
+          status: false,
+          message: "User Not Found",
+          data: null,
+        };
+      }
       const userBalance = await getUserBalance(userId);
       if (userBalance.total_chip_amount >= amount) {
         const rewardDet = await PacksItemModel.findOne({ _id: rewardItemId });
         const isDeducted = await deductAmount(userId, amount);
         // const isCredited = await creditAmount(userId, rewardDet.amount);
+        await addExperience(userDet, amount);
         const spinHistory = await DealsSpinHistoryModel.create({
           userId,
           rewardItemId,

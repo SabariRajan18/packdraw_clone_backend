@@ -3,6 +3,7 @@ import UsersModel from "../../models/Users.js";
 import PacksItemModel from "../../models/PacksItems.js";
 import PacksSpendModel from "../../models/UserPacksSpend.js";
 import {
+  addExperience,
   calculateTotalAmount,
   calculateTotalRewardAmount,
   creditAmount,
@@ -202,7 +203,6 @@ class UserPacksService {
   spinPacks = async (userId, req_Body) => {
     try {
       const { packsIds, itemIds } = req_Body;
-      console.log({ packsIds });
       const userDet = await UsersModel.findOne({ _id: userId });
       if (!userDet) {
         return {
@@ -249,7 +249,6 @@ class UserPacksService {
         const totalRewardAmount = await calculateTotalRewardAmount(
           actualRewardDet
         );
-        console.log({ totalRewardAmount }, { totalAmount });
         if (userBalance.total_chip_amount >= totalAmount) {
           const isDeducted = await deductAmount(userId, totalAmount);
           // const isCredited = await creditAmount(userId, totalRewardAmount);
@@ -277,6 +276,7 @@ class UserPacksService {
           //   ),
           //   rewardAmount: totalRewardAmount,
           // });
+          await addExperience(userDet, totalAmount);
           const spinHistory = await SpinHistoryModel.insertMany(array);
           if (isDeducted) {
             return {

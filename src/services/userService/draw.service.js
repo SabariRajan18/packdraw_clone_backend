@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import {
+  addExperience,
   deductAmount,
   getUserBalance,
   randomBetween,
@@ -8,13 +9,22 @@ import {
 } from "../../helpers/common.helper.js";
 import DrawProductsModel from "../../models/DrawProducts.js";
 import DrawSpinHistoryModel from "../../models/DrawSpinHistory.js";
+import UsersModel from "../../models/Users.js";
 
 class UserDrawsService {
   getDrawProducts = async (request, req_Body) => {
     try {
       const { userId } = request;
       const { type, amount } = req_Body;
-      console.log({ req_Body });
+      const userDet = await UsersModel.findOne({ _id: userId });
+      if (!userDet) {
+        return {
+          code: 403,
+          status: false,
+          message: "User Not Found",
+          data: null,
+        };
+      }
       if (!type) {
         return {
           code: 400,
@@ -34,6 +44,7 @@ class UserDrawsService {
         };
       }
       const isDebited = await deductAmount(userId, amount);
+      await addExperience(userDet, amount);
       if (isDebited) {
         const data = await DrawProductsModel.aggregate([
           { $match: { tier: type.toLowerCase() } },
