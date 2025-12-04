@@ -107,7 +107,7 @@ class UserDrawsService {
         9: randomBetween(0, 1),
       };
 
-      const count = Number(roundCardCount[Number(multiplierIndex)] || 1);
+      const count = Number(roundCardCount[Number(multiplierIndex)] || 0);
       const excludeObjectIds = excludeIds.map(
         (id) => new mongoose.Types.ObjectId(id)
       );

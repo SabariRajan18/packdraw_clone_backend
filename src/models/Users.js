@@ -23,6 +23,8 @@ const usersSchema = new Schema(
     country: { type: String, default: "" },
     phone_number: { type: String, default: "" },
     profileImage: { type: String, default: "" },
+    level: { type: String, default: 0 },
+    exp: { type: Number, default: 0 },
   },
   {
     timestamps: true,
