@@ -54,7 +54,7 @@ class BattleService {
       );
       
       if (alreadyJoined) {
-        throw new Error('Already joined this battle');
+       return {isjoined:true}
       }
 
       const seatIndex = battle.players.length;
@@ -308,18 +308,37 @@ class BattleService {
   async getBattleDetails(battleId) {
     try {
       const battle = await Battle.findById(battleId)
-        .populate('creatorId', 'username avatar')
-        .populate('packsIds', 'name packAmount wallpaper')
-        .populate('players.userId', 'username avatar')
+        .populate({
+          path: 'creatorId',
+          select: 'userName profileImage'
+        })
+        .populate({
+          path: 'packsIds',
+          select: 'name packAmount wallpaper items',
+          populate: {
+            path: 'items',
+            model: 'PacksItems',
+            select: 'name image description amount'
+          }
+        })
+        .populate({
+          path: 'players.userId',
+          select: 'userName profileImage'
+        })
+        .populate({
+          path: 'winnerUserId',
+          select: 'userName profileImage'
+        })
         .lean();
-
+  
       return battle;
     } catch (error) {
-      console.error('Error getting battle details:', error);
+      console.error("Error getting battle details:", error);
       throw error;
     }
   }
-
+  
+  
   async cancelBattle(battleId, userId) {
     try {
       const battle = await Battle.findById(battleId);
