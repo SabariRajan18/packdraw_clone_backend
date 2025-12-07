@@ -44,4 +44,10 @@ router.post(
 
 router.get("/get-battle-configs", CommonBattleController.getBattleConfigs);
 
+router.post(
+  "/get-all-history",
+  userTokenAuthuser,
+  profileImageController.getAllHistory
+);
+
 export default router;
