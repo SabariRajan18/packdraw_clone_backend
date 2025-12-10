@@ -4,7 +4,10 @@ import {
   successResponse,
 } from "../../helpers/response.helper.js";
 import ProfileImageService from "../../services/userService/profileImage.service.js";
-
+import PacksModel from "../../models/PacksSpinHistory.js";
+import BattleModel from "../../models/BattleHistory.js";
+import DealsModel from "../../models/DealsSpinHistory.js";
+import DrawsModel from "../../models/DrawSpinHistory.js";
 class ProfileImageController {
   uploadProfileImage = async (req, res) => {
     try {
@@ -50,6 +53,19 @@ class ProfileImageController {
         userId,
         req.body,
         req.query
+      );
+      await successResponse(req, res, response);
+    } catch (error) {
+      await errorResponse(req, res, error);
+    }
+  };
+
+  getAllHistory = async (req, res) => {
+    try {
+      const { userId } = req.user;
+      const response = await ProfileImageService.getAllHistory(
+        userId,
+        req.body
       );
       await successResponse(req, res, response);
     } catch (error) {

@@ -8,6 +8,7 @@ import PacksSpinHistory from "../../models/PacksSpinHistory.js";
 import DealsSpinHistory from "../../models/DealsSpinHistory.js";
 import DrawSpinHistory from "../../models/DrawSpinHistory.js";
 import mongoose from "mongoose";
+import BattleHistoryModel from "../../models/BattleHistory.js";
 
 export default new (class ProfileImageService {
   uploadProfileImage = async (userId, file) => {
@@ -300,6 +301,60 @@ export default new (class ProfileImageService {
         status: false,
         message: "Internal Server Error",
         data: null,
+      };
+    }
+  };
+
+  getAllHistory = async (userId, req_Body) => {
+    try {
+      const { module, page = 1, limit = 20 } = req_Body;
+
+      const Model = {
+        packs: PacksSpinHistory,
+        battles: BattleHistoryModel,
+        deals: DealsSpinHistory,
+        draws: DrawSpinHistory,
+      };
+
+      if (!Model[module]) {
+        return {
+          status: false,
+          message: "Invalid module type",
+        };
+      }
+      const skip = (page - 1) * limit;
+      const totalCount = await Model[module].countDocuments({ userId });
+      const data = await Model[module].aggregate([
+        {
+          $match: { userId: new mongoose.Types.ObjectId(userId) },
+        },
+        {
+          $sort: { createdAt: -1 },
+        },
+        {
+          $skip: skip,
+        },
+        {
+          $limit: Number(limit),
+        },
+      ]);
+
+      return {
+        status: true,
+        message: "History fetched successfully",
+        data: {
+          data,
+          page: Number(page),
+          limit: Number(limit),
+          totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+      };
+    } catch (error) {
+      console.error({ getAllHistory: error });
+      return {
+        status: false,
+        message: "Internal server error",
       };
     }
   };
