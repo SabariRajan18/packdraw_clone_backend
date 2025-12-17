@@ -315,11 +315,18 @@ class BattleService {
         .populate({
           path: 'packsIds',
           select: 'name packAmount wallpaper items',
-          populate: {
-            path: 'items',
-            model: 'PacksItems',
-            select: 'name image description amount'
-          }
+          populate: [
+            {
+              path: 'items',
+              model: 'PacksItems',
+              select: 'name image description amount'
+            },
+            {
+              path: 'wallpaper',
+              model: 'PacksImages',
+              select: 'wallpaper name'
+            }
+          ]
         })
         .populate({
           path: 'players.userId',
@@ -337,6 +344,7 @@ class BattleService {
       throw error;
     }
   }
+  
   
   
   async cancelBattle(battleId, userId) {
